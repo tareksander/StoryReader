@@ -1,0 +1,89 @@
+name: story_reader
+description: ""
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.4.3 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # Core library extensions & misc
+  intl: any
+  collection: ^1.18.0
+  logging: ^1.2.0
+  async: ^2.11.0
+
+  # State management
+  flutter_riverpod: ^2.3.6
+  # Settings
+  shared_preferences: ^2.2.3
+  # Data storage
+  drift: ^2.8.2
+  sqlite3_flutter_libs: ^0.5.0
+  path_provider: ^2.0.0
+  path: ^1.8.3
+  # Routing
+  go_router: ^14.2.0
+  # API requests
+  chopper: ^8.0.0
+  http: ^1.0.0
+  json_annotation: ^4.8.1
+
+  #image_picker: ^1.1.2
+  url_launcher: ^6.1.11
+  #webview_flutter: ^4.2.2
+  #video_player: ^2.6.1
+  #flutter_markdown: ^0.7.2
+  #quick_actions: ^1.0.5
+  #file_selector: ^1.0.3
+  flutter_image: ^4.1.6
+  shelf: ^1.4.1
+  html: ^0.15.4
+  
+  
+  #shelf_proxy: ^1.0.0
+  #shelf_web_socket: ^1.0.0
+  #web_socket_channel: ^2.4.0
+  #audioplayers: ^5.1.0
+  #network_info_plus: ^5.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  # Building Windows installers
+  msix: ^3.14.2
+  # Generators
+  build_runner: ^2.4.5
+  chopper_generator: ^8.0.0
+  json_serializable: ^6.7.0
+  drift_dev: ^2.8.2
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - fonts/LICENSE.txt
+
+fonts:
+  - family: RobotoMono
+    fonts:
+      - asset: fonts/RobotoMono-Italic.ttf
+        style: italic
+      - asset: fonts/RobotoMono-BoldItalic.ttf
+        style: italic
+      - asset: fonts/RobotoMono-Bold.ttf
+      - asset: fonts/RobotoMono-Regular.ttf
+  - family: Roboto
+    fonts:
+      - asset: fonts/Roboto-BoldItalic.ttf
+        style: italic
+      - asset: fonts/Roboto-Italic.ttf
+        style: italic
+      - asset: fonts/Roboto-Bold.ttf
+      - asset: fonts/Roboto-Regular.ttf
