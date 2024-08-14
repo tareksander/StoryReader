@@ -2,6 +2,19 @@
 
 A reader and offline library for ScribbleHub series.
 
+
+![](screenshots/1.png)
+![](screenshots/4.png)
+![](screenshots/7.png)
+<details>
+<summary>More screenshots</summary>
+<img src="screenshots/2.png"/>
+<img src="screenshots/3.png"/>
+<img src="screenshots/5.png"/>
+<img src="screenshots/6.png"/>
+</details>
+
+
 ## Features
 
 - [ ] Site support
