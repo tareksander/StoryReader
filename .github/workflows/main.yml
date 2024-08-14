@@ -21,10 +21,10 @@ jobs:
           flutter build windows
       - name: Add DLLs
         run: |
-          cp C:\Windows\System32\msvcp140.dll build\windows\runner\Release\
-          cp C:\Windows\System32\vcruntime140.dll build\windows\runner\Release\
-          cp C:\Windows\System32\vcruntime140_1.dll build\windows\runner\Release\
+          cp C:\Windows\System32\msvcp140.dll build\windows\x64\runner\Release\
+          cp C:\Windows\System32\vcruntime140.dll build\windows\x64\runner\Release\
+          cp C:\Windows\System32\vcruntime140_1.dll build\windows\x64\runner\Release\
       - uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: build/windows/runner/Release
+          path: build/windows/x64/runner/Release
