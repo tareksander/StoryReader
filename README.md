@@ -3,15 +3,20 @@
 A reader and offline library for ScribbleHub series.
 
 
-![](screenshots/1.png)
-![](screenshots/4.png)
-![](screenshots/7.png)
+<div>
+<img src="screenshots/1.png" width="40%"/>
+<img src="screenshots/4.png" width="40%"/>
+<img src="screenshots/7.png" width="80%"/>
+</div>
 <details>
-<summary>More screenshots</summary>
+<summary>More & full resolution screenshots</summary>
+<img src="screenshots/1.png"/>
 <img src="screenshots/2.png"/>
 <img src="screenshots/3.png"/>
+<img src="screenshots/4.png"/>
 <img src="screenshots/5.png"/>
 <img src="screenshots/6.png"/>
+<img src="screenshots/7.png"/>
 </details>
 
 
