@@ -15,7 +15,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build
-        run: flutter build windows
+        run: |
+          dart run build_runner build
+          flutter gen-l10n
+          flutter build windows
       - name: Add DLLs
         run: |
           cp C:\Windows\System32\msvcp140.dll build\windows\runner\Release\
