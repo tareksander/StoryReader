@@ -168,9 +168,10 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
                                     ),
                                   ),
                                   ElevatedButton(
-                                      onPressed: () {
-                                        appDB.addSeriesIfNeeded(
+                                      onPressed: () async {
+                                        await appDB.addSeriesIfNeeded(
                                             widget.site, widget.id, s.name, s.description, s.thumbnail);
+                                        await appDB.updateLastReadDate(widget.site, widget.id);
                                         List<int> indexes = [];
                                         List<String> ids = [];
                                         List<String> names = [];
@@ -213,9 +214,10 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
                                                     child: Text("Unqueue"));
                                               case ChapterStatus.online:
                                                 return ElevatedButton(
-                                                    onPressed: () {
-                                                      appDB.addSeriesIfNeeded(
+                                                    onPressed: () async {
+                                                      await appDB.addSeriesIfNeeded(
                                                           widget.site, widget.id, s.name, s.description, s.thumbnail);
+                                                      await appDB.updateLastReadDate(widget.site, widget.id);
                                                       appDB.queueChapter(widget.site, c.name, widget.id, i, c.id);
                                                       startDownloadManager();
                                                     },
