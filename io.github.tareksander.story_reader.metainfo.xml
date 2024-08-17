@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>com.tsander.story_reader</id>
+  <id>io.github.tareksander.story_reader</id>
   
   <name>StoryReader</name>
-  <summary>Summary</summary>
+  <summary>An offline library and reader for stories on ScribbleHub and RoyalRoad</summary>
   
   <metadata_license>CC-BY-SA-4.0</metadata_license>
   <project_license>MPL-2.0</project_license>
@@ -20,5 +20,5 @@
     </p>
   </description>
   
-  <launchable type="desktop-id">com.tsander.story_reader.desktop</launchable>
+  <launchable type="desktop-id">io.github.tareksander.story_reader.desktop</launchable>
 </component>
