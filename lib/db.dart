@@ -160,8 +160,8 @@ class AppDB extends _$AppDB {
     });
   }
 
-  Future<void> addSeriesIfNeeded(Site site, String id, String name, String description, [Uint8List? thumbnail]) {
-    var s = Series(site: site, id: id, name: name, description: description, thumbnail: thumbnail);
+  Future<void> addSeriesIfNeeded(Site site, String id, String name, String description, [Uint8List? thumbnail, int? thumbnailWidth, int? thimbnailHeight]) {
+    var s = Series(site: site, id: id, name: name, description: description, thumbnail: thumbnail, thumbnailWidth: thumbnailWidth, thumbnailHeight: thimbnailHeight);
     return transaction(() async {
       var rc = await (select(seriesTable)
             ..whereSamePrimaryKey(s)

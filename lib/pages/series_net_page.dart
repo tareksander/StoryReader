@@ -25,6 +25,8 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
   late Future<SeriesData> req;
 
   List<ChapterData>? chapters;
+  int? thumbnailWidth;
+  int? thumbnailHeight;
   
   Future<void> _setThumbnail(Uint8List? thumbnail) async {
     if (Preferences.useImages.value && thumbnail != null) {
@@ -32,6 +34,8 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
       var i = await ui.ImageDescriptor.encoded(b);
       var w = i.width;
       var h = i.height;
+      thumbnailWidth = w;
+      thumbnailHeight = h;
       i.dispose();
       b.dispose();
       appDB.setThumbnail(widget.site, widget.id, thumbnail, w, h);
@@ -170,7 +174,7 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
                                   ElevatedButton(
                                       onPressed: () async {
                                         await appDB.addSeriesIfNeeded(
-                                            widget.site, widget.id, s.name, s.description, s.thumbnail);
+                                            widget.site, widget.id, s.name, s.description, s.thumbnail, thumbnailWidth, thumbnailHeight);
                                         await appDB.updateLastReadDate(widget.site, widget.id);
                                         List<int> indexes = [];
                                         List<String> ids = [];
@@ -216,7 +220,7 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
                                                 return ElevatedButton(
                                                     onPressed: () async {
                                                       await appDB.addSeriesIfNeeded(
-                                                          widget.site, widget.id, s.name, s.description, s.thumbnail);
+                                                          widget.site, widget.id, s.name, s.description, s.thumbnail, thumbnailWidth, thumbnailHeight);
                                                       await appDB.updateLastReadDate(widget.site, widget.id);
                                                       appDB.queueChapter(widget.site, c.name, widget.id, i, c.id);
                                                       startDownloadManager();

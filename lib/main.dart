@@ -45,7 +45,7 @@ late AppDB appDB;
 final shC = SHAPI.create();
 final rrC = RRAPI.create();
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   LicenseRegistry.addLicense(() async* {
     yield LicenseEntryWithLineBreaks(["Roboto", "RobotoMono"], await rootBundle.loadString("fonts/LICENSE.txt"));
@@ -53,17 +53,17 @@ void main() {
   appDB = AppDB();
   // For this schema version, to migrations on the main thread, since they won't work in the drift isolate.
   if (appDB.schemaVersion == 3) {
-    (() async {
+    await (() async {
       for (var s in await appDB.series()) {
         if (s.thumbnail != null && (s.thumbnailWidth == null || s.thumbnailHeight == null)) {
-          print("migrated ${s.name}");
+          //print("migrated ${s.name}");
           var b = await ImmutableBuffer.fromUint8List(s.thumbnail!);
           var i = await ImageDescriptor.encoded(b);
           var w = i.width;
           var h = i.height;
           b.dispose();
           i.dispose();
-          appDB.setThumbnail(s.site, s.id, s.thumbnail!, w, h);
+          await appDB.setThumbnail(s.site, s.id, s.thumbnail!, w, h);
         }
       }
     })();

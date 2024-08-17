@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:chopper/chopper.dart';
+import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart';
 import 'package:story_reader/db.dart';
 import 'package:story_reader/prefs.dart';
@@ -118,7 +119,18 @@ abstract class RRAPI extends ChopperService {
     var excludedStyle = body.getElementsByTagName("style")[0].text.trim().split(RegExp(r"\s*{"))[0];
     var content = body.querySelector(".chapter-content")!;
     content.querySelector(excludedStyle)?.remove();
-    // TODO insert author notes into chapter contents
+    
+    var note = body.querySelector(".author-note");
+    if (note != null) {
+      var n = dom.Element.tag("div");
+      var b = dom.Element.tag("div");
+      n.classes.add("wi_authornotes");
+      b.classes.add("wi_authornotes_body");
+      b.children.addAll(note.querySelector("td")!.children[0].children[1].children);
+      n.children.add(b);
+      content.children.insert(0, n);
+    }
+    
     return resp.copyWith(body: ChapterData(id, name, content.innerHtml));
   }
   
