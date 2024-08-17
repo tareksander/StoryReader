@@ -126,7 +126,7 @@ abstract class RRAPI extends ChopperService {
       var b = dom.Element.tag("div");
       n.classes.add("wi_authornotes");
       b.classes.add("wi_authornotes_body");
-      b.children.addAll(note.querySelector("td")!.children[0].children[1].children);
+      b.children.addAll(note.children);
       n.children.add(b);
       content.children.insert(0, n);
     }
