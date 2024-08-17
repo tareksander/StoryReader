@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:story_reader/db.dart';
@@ -25,7 +27,6 @@ class _LibraryPageState extends State<LibraryPage> {
   Widget build(BuildContext context) {
     Size ws = MediaQuery.sizeOf(context);
     double iw = (ws.width < 500) ? ws.width / 3 : 250;
-    // TODO option to sort alphabetically or by last read
     return Scaffold(
       appBar: AppBar(
         actions: [
@@ -66,11 +67,16 @@ class _LibraryPageState extends State<LibraryPage> {
                     return Row(
                       children: [
                         if (Preferences.useImages.value && s.thumbnail != null)
-                          GestureDetector(
-                            onTap: () => router.push("/series", extra: s.toJson()),
-                            child: ConstrainedBox(
-                                constraints: BoxConstraints(minWidth: iw, maxWidth: iw),
-                                child: Center(child: Image.memory(s.thumbnail!, fit: BoxFit.scaleDown))),
+                          Builder(
+                            builder: (context) {
+                              var factor = max(s.thumbnailWidth! / iw, 1.0);
+                              return GestureDetector(
+                                onTap: () => router.push("/series", extra: s.toJson()),
+                                child: ConstrainedBox(
+                                    constraints: BoxConstraints(minWidth: iw, maxWidth: iw),
+                                    child: Center(child: Image.memory(s.thumbnail!, fit: BoxFit.scaleDown, width: iw, height: s.thumbnailHeight! / factor,))),
+                              );
+                            }
                           ),
                         Flexible(
                             child: Padding(

@@ -137,12 +137,11 @@ class _SeriesPageState extends State<SeriesPage> {
 
   void _doNet() {
     setState(() {
-      inProgress ??= (() async {
-        var s = (await shC.series(widget.series.id, widget.series.name)).body!;
+      inProgress ??= (() {
         var extra = <String, dynamic>{
-          "id": s.id,
-          "site": s.site.index,
-          "name": s.name,
+          "id": widget.series.id,
+          "site": widget.series.site.index,
+          "name": widget.series.name,
         };
         router.push("/seriesNet", extra: extra);
         setState(() {

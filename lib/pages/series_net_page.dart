@@ -6,6 +6,7 @@ import 'package:story_reader/db.dart';
 import 'package:story_reader/download_manager.dart';
 import 'package:story_reader/main.dart';
 import 'package:story_reader/prefs.dart';
+import 'dart:ui' as ui;
 
 import '../series_data.dart';
 
@@ -24,18 +25,28 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
   late Future<SeriesData> req;
 
   List<ChapterData>? chapters;
-
+  
+  Future<void> _setThumbnail(Uint8List? thumbnail) async {
+    if (Preferences.useImages.value && thumbnail != null) {
+      var b = await ui.ImmutableBuffer.fromUint8List(thumbnail);
+      var i = await ui.ImageDescriptor.encoded(b);
+      var w = i.width;
+      var h = i.height;
+      i.dispose();
+      b.dispose();
+      appDB.setThumbnail(widget.site, widget.id, thumbnail, w, h);
+    }
+  }
+  
   @override
   void initState() {
     super.initState();
     switch (widget.site) {
       case Site.scribbleHub:
-        req = shC.series(widget.id, widget.name).then((r) {
+        req = shC.series(widget.id, widget.name).then((r) async {
           var b = r.body!;
           var thumbnail = b.thumbnail;
-          if (Preferences.useImages.value && thumbnail != null) {
-            appDB.setThumbnail(widget.site, widget.id, thumbnail);
-          }
+          await _setThumbnail(thumbnail);
           return b;
         });
         
@@ -43,9 +54,21 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
             .chapters(widget.id)
             .then((r) => r.body!)
             .then((cs) => setState(() {
-                  chapters = cs;
+                  chapters = cs.reversed.toList();
                 }))
             .onError((d, t) => router.pop());
+      case Site.royalRoad:
+        req = rrC.series(widget.id, widget.name).then((r) async {
+          var b = r.body!;
+          var s = b.$1;
+          var cl = b.$2;
+          var thumbnail = s.thumbnail;
+          await _setThumbnail(thumbnail);
+          setState(() {
+            chapters = cl;
+          });
+          return s;
+        });
     }
   }
 
@@ -94,6 +117,7 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
                                   ),
                                 ),
                               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text("Site: ${s.site.toString()}"),
                                 Text(
                                   "Views: ${s.views}",
                                   textAlign: TextAlign.start,
@@ -149,11 +173,13 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
                                             widget.site, widget.id, s.name, s.description, s.thumbnail);
                                         List<int> indexes = [];
                                         List<String> ids = [];
-                                        for (var (i, c) in chapters!.reversed.indexed) {
+                                        List<String> names = [];
+                                        for (var (i, c) in chapters!.indexed) {
                                           indexes.add(i);
                                           ids.add(c.id);
+                                          names.add(c.name);
                                         }
-                                        appDB.queueChapters(widget.site, widget.id, indexes, ids);
+                                        appDB.queueChapters(widget.site, widget.id, names, indexes, ids);
                                         startDownloadManager();
                                       },
                                       child: Text("Download all")),
@@ -163,7 +189,7 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
                             ]));
                             l.add(SliverList.separated(
                               itemBuilder: (_, i) {
-                                var c = chapters![chapters!.length - i - 1];
+                                var c = chapters![i];
                                 return Row(
                                   children: [
                                     Flexible(fit: FlexFit.tight, child: Text(c.name, softWrap: true)),
@@ -190,7 +216,7 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
                                                     onPressed: () {
                                                       appDB.addSeriesIfNeeded(
                                                           widget.site, widget.id, s.name, s.description, s.thumbnail);
-                                                      appDB.queueChapter(widget.site, widget.id, i, c.id);
+                                                      appDB.queueChapter(widget.site, c.name, widget.id, i, c.id);
                                                       startDownloadManager();
                                                     },
                                                     child: Text("Download"));

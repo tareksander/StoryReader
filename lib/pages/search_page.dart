@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:story_reader/main.dart';
 import 'package:story_reader/prefs.dart';
@@ -78,17 +81,24 @@ class _SearchPageState extends State<SearchPage> {
                                       if (Preferences.useImages.value && s.thumbnail != null)
                                         ConstrainedBox(constraints: const BoxConstraints(minWidth: 250, maxWidth: 250),
                                         child: Center(child: Image.memory(s.thumbnail!, fit: BoxFit.scaleDown))),
-                                      Flexible(
-                                        child: TextButton(
-                                            onPressed: () {
-                                              var extra = <String, dynamic>{
-                                                "id": s.id,
-                                                "site": s.site.index,
-                                                "name": s.name,
-                                              };
-                                              router.push("/seriesNet", extra: extra);
-                                            },
-                                            child: Text(s.name, softWrap: true,)),
+                                      IntrinsicHeight(
+                                        child: Column(
+                                          children: [
+                                            Flexible(
+                                              child: TextButton(
+                                                  onPressed: () {
+                                                    var extra = <String, dynamic>{
+                                                      "id": s.id,
+                                                      "site": s.site.index,
+                                                      "name": s.name,
+                                                    };
+                                                    router.push("/seriesNet", extra: extra);
+                                                  },
+                                                  child: Text(s.name, softWrap: true,)),
+                                            ),
+                                            Flexible(child: Text("Site: ${s.site.toString()}", softWrap: true,))
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -108,7 +118,10 @@ class _SearchPageState extends State<SearchPage> {
     if (text.text.length > 2) {
       setState(() {
         _result = null;
-        req = shC.simpleSearch(text.text).then((r) => r.body!);
+        req = Future.wait([shC.simpleSearch(text.text).then((r) => r.body!), rrC.simpleSearch(text.text).then((r) {
+          var l = r.body!;
+          return l.getRange(0, min(l.length, 10));
+        })]).then((l) => l.flattened.sortedBy((s) => s.name).toList());
       });
     }
   }

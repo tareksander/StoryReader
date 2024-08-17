@@ -61,8 +61,7 @@ A reader and offline library for ScribbleHub series.
   - [x] FlatPak
     - [ ] ...on FlatHub
       - [ ] TODO: Change app id to io.github
-  - [ ] MSI installer
-  - [ ] Zip archive for windows
+  - [x] Zip archive for windows
   - [x] APK
 - [ ] Color scheme
 - [ ] Tables
@@ -71,6 +70,8 @@ A reader and offline library for ScribbleHub series.
 
 #### 1.1
 
+- [ ] Update notifications for windows
+- [ ] f-droid
 - [ ] Android background downloads
 - [ ] RoyalRoad
 

@@ -132,7 +132,7 @@ int postfixedParseInt(String s) {
 
 String slugify(String name) {
   // TODO What happens with multiple consecutive spaces? Unicode chars? Multiple consecutive -?
-  var slugged = name.replaceAll(RegExp(r"[^a-zA-Z ]"), "").replaceAll(" ", "-").toLowerCase();
+  var slugged = name.replaceAll(RegExp(r"[^a-zA-Z ]"), "").replaceAll(" ", "-").replaceAll(RegExp(r"-+"), "-").toLowerCase();
   //print(slugged);
   return slugged;
 }

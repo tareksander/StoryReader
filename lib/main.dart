@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +14,7 @@ import 'package:story_reader/pages/read_page.dart';
 import 'package:story_reader/pages/series_net_page.dart';
 import 'package:story_reader/pages/series_page.dart';
 import 'package:story_reader/pages/share_network_page.dart';
+import 'package:story_reader/rr.dart';
 import 'package:story_reader/series_data.dart';
 import 'package:story_reader/sh.dart';
 import 'pages/main_page.dart';
@@ -40,6 +43,7 @@ final router = GoRouter(routes: [
 late AppDB appDB;
 
 final shC = SHAPI.create();
+final rrC = RRAPI.create();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +51,23 @@ void main() {
     yield LicenseEntryWithLineBreaks(["Roboto", "RobotoMono"], await rootBundle.loadString("fonts/LICENSE.txt"));
   });
   appDB = AppDB();
+  // For this schema version, to migrations on the main thread, since they won't work in the drift isolate.
+  if (appDB.schemaVersion == 3) {
+    (() async {
+      for (var s in await appDB.series()) {
+        if (s.thumbnail != null && (s.thumbnailWidth == null || s.thumbnailHeight == null)) {
+          print("migrated ${s.name}");
+          var b = await ImmutableBuffer.fromUint8List(s.thumbnail!);
+          var i = await ImageDescriptor.encoded(b);
+          var w = i.width;
+          var h = i.height;
+          b.dispose();
+          i.dispose();
+          appDB.setThumbnail(s.site, s.id, s.thumbnail!, w, h);
+        }
+      }
+    })();
+  }
   startDownloadManager();
   runApp(const RootRestorationScope(restorationId: "root", child: ProviderScope(child: MainApp())));
 }

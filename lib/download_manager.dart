@@ -50,12 +50,16 @@ void _chapterDownloadManager() async {
     var db = AppDB(await connection.connect());
     while (true) {
       var l = await db.queuedChapters();
+      var sl = await db.series();
       try {
         for (var c in l) {
+          var s = sl.firstWhere((s) => s.site == c.site && s.id == c.id);
           ChapterData data;
           switch (c.site) {
             case Site.scribbleHub:
-              data = (await shC.chapterContents(SeriesData(site: c.site, id: c.id), c.chapterID)).body!;
+              data = (await shC.chapterContents(SeriesData(site: c.site, id: c.id, name: s.name), c.chapterID)).body!;
+            case Site.royalRoad:
+              data = (await rrC.chapterContents(SeriesData(site: c.site, id: c.id, name: s.name), c.chapterID, c.name!)).body!;
           }
           await db.saveChapter(c.site, c.id, c.number, c.chapterID, data.content!, data.name);
           await Future.delayed(Duration.zero);

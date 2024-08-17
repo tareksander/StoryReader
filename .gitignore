@@ -12,6 +12,7 @@ migrate_working_dir/
 .flatpak-builder
 /flatpak
 /flatpak-repo
+/story_reader.flatpak
 
 # IntelliJ related
 *.iml

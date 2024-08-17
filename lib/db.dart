@@ -12,7 +12,17 @@ part 'db.g.dart';
 
 enum Site {
   scribbleHub,
+  royalRoad;
+  
+  /// A string representation of a Site.
+  @override
+  String toString() => switch (this) {
+    Site.scribbleHub => "ScribbleHub",
+    Site.royalRoad => "RoyalRoad",
+  };
 }
+
+
 
 @DataClassName("Series")
 class SeriesTable extends Table {
@@ -28,6 +38,9 @@ class SeriesTable extends Table {
 
   IntColumn get lastRead => integer().nullable()();
   DateTimeColumn get lastReadDate => dateTime().nullable()();
+  
+  IntColumn get thumbnailWidth => integer().nullable()();
+  IntColumn get thumbnailHeight => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id, site};
@@ -42,7 +55,7 @@ class Chapters extends Table {
   IntColumn get number => integer()();
 
   TextColumn get chapterID => text()();
-  TextColumn get name => text().nullable()();
+  TextColumn get name => text()();
   TextColumn get content => text().nullable()();
   IntColumn get scrollPosition => integer().nullable()();
   BoolColumn get queued => boolean()();
@@ -80,6 +93,10 @@ enum ChapterStatus {
 @DriftDatabase(tables: [SeriesTable, Chapters])
 class AppDB extends _$AppDB {
   AppDB([QueryExecutor? executor]) : super(executor ?? _open());
+  
+  Future<List<Series>> series() async {
+    return select(seriesTable).get();
+  }
   
   Future<int> dbSize() async {
     return (await _dbFile()).length();
@@ -157,7 +174,7 @@ class AppDB extends _$AppDB {
   }
 
   Future<void> deleteChapter(Site site, String id, int number) {
-    var c = Chapter(site: site, id: id, number: number, chapterID: "", queued: false);
+    var c = Chapter(site: site, id: id, number: number, chapterID: "", queued: false, name: '');
     return transaction(() async {
       var s = await (select(seriesTable)..where((s) => s.site.equals(site.index) & s.id.equals(id))).getSingleOrNull();
       if (s != null && s.lastRead == number) {
@@ -187,11 +204,13 @@ class AppDB extends _$AppDB {
     return _queuedChapters().watch();
   }
 
-  Future<void> setThumbnail(Site site, String id, Uint8List thumbnail) {
+  Future<void> setThumbnail(Site site, String id, Uint8List thumbnail, int width, int height) {
     return customUpdate(
-      "UPDATE series SET thumbnail = ? WHERE site = ? AND id = ?",
+      "UPDATE series SET thumbnail = ?, thumbnail_width = ?, thumbnail_height = ? WHERE site = ? AND id = ?",
       variables: [
         Variable.withBlob(thumbnail),
+        Variable.withInt(width),
+        Variable.withInt(height),
         Variable.withInt(site.index),
         Variable.withString(id),
       ],
@@ -251,8 +270,8 @@ class AppDB extends _$AppDB {
     });
   }
 
-  Future<void> queueChapter(Site site, String id, int number, String chapterID) {
-    var c = Chapter(site: site, id: id, number: number, queued: true, chapterID: chapterID);
+  Future<void> queueChapter(Site site, String name, String id, int number, String chapterID) {
+    var c = Chapter(site: site, name: name, id: id, number: number, queued: true, chapterID: chapterID);
     return transaction(() async {
       var rc = await (select(chapters)
             ..whereSamePrimaryKey(c)
@@ -268,7 +287,7 @@ class AppDB extends _$AppDB {
     });
   }
 
-  Future<void> queueChapters(Site site, String id, List<int> numbers, List<String> chapterIDs, [bool queue = true]) {
+  Future<void> queueChapters(Site site, String id, List<String> names, List<int> numbers, List<String> chapterIDs, [bool queue = true]) {
     return transaction(() async {
       var rc = await (select(chapters)
             ..where((c) => c.site.equals(site.index) & c.id.equals(id) & c.number.isIn(numbers)))
@@ -276,7 +295,7 @@ class AppDB extends _$AppDB {
       for (var (i, n) in numbers.indexed) {
         var a = rc.indexWhere((c) => c.number == n);
         if (a == -1) {
-          rc.add(Chapter(site: site, id: id, number: n, chapterID: chapterIDs[i], queued: queue));
+          rc.add(Chapter(site: site, name: names[i], id: id, number: n, chapterID: chapterIDs[i], queued: queue));
         } else {
           if (!queue || rc[a].content == null) {
             rc[a] = rc[a].copyWith(queued: queue);
@@ -290,7 +309,7 @@ class AppDB extends _$AppDB {
   }
 
   Future<void> dequeueChapter(Site site, String id, int number) {
-    var c = Chapter(site: site, id: id, number: number, queued: false, chapterID: "");
+    var c = Chapter(site: site, id: id, number: number, queued: false, chapterID: "", name: '');
     return transaction(() async {
       var rc = await (select(chapters)
             ..whereSamePrimaryKey(c)
@@ -356,7 +375,7 @@ class AppDB extends _$AppDB {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -364,6 +383,10 @@ class AppDB extends _$AppDB {
       await transaction(() async {
         if (from < 2) {
           await m.addColumn(seriesTable, seriesTable.lastReadDate);
+        }
+        if (from < 3) {
+          await m.addColumn(seriesTable, seriesTable.thumbnailWidth);
+          await m.addColumn(seriesTable, seriesTable.thumbnailHeight);
         }
       });
     });
