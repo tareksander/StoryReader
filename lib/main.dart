@@ -52,7 +52,7 @@ void main() async {
   });
   appDB = AppDB();
   // For this schema version, to migrations on the main thread, since they won't work in the drift isolate.
-  if (appDB.schemaVersion == 3) {
+  if (appDB.schemaVersion >= 3) {
     await (() async {
       for (var s in await appDB.series()) {
         if (s.thumbnail != null && (s.thumbnailWidth == null || s.thumbnailHeight == null)) {

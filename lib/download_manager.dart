@@ -59,7 +59,7 @@ void _chapterDownloadManager() async {
             case Site.scribbleHub:
               data = (await shC.chapterContents(SeriesData(site: c.site, id: c.id, name: s.name), c.chapterID)).body!;
             case Site.royalRoad:
-              data = (await rrC.chapterContents(SeriesData(site: c.site, id: c.id, name: s.name), c.chapterID, c.name!)).body!;
+              data = (await rrC.chapterContents(SeriesData(site: c.site, id: c.id, name: s.name), c.chapterID, c.name)).body!;
           }
           await db.saveChapter(c.site, c.id, c.number, c.chapterID, data.content!, data.name);
           await Future.delayed(Duration.zero);

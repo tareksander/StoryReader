@@ -120,15 +120,29 @@ abstract class RRAPI extends ChopperService {
     var content = body.querySelector(".chapter-content")!;
     content.querySelector(excludedStyle)?.remove();
     
-    var note = body.querySelector(".author-note");
-    if (note != null) {
+    var notes = body.querySelectorAll(".author-note");
+    for (var note in notes) {
+      bool before = false;
+      {
+        dom.Element? s = note.parent;
+        while ((s = s?.nextElementSibling) != null) {
+          if (s == content) {
+            before = true;
+            break;
+          }
+        }
+      }
       var n = dom.Element.tag("div");
       var b = dom.Element.tag("div");
       n.classes.add("wi_authornotes");
       b.classes.add("wi_authornotes_body");
       b.children.addAll(note.children);
       n.children.add(b);
-      content.children.insert(0, n);
+      if (before) {
+        content.children.insert(0, n);
+      } else {
+        content.children.add(n);
+      }
     }
     
     return resp.copyWith(body: ChapterData(id, name, content.innerHtml));

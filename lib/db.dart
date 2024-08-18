@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -56,7 +58,7 @@ class Chapters extends Table {
 
   TextColumn get chapterID => text()();
   TextColumn get name => text()();
-  TextColumn get content => text().nullable()();
+  BlobColumn get content => blob().nullable()();
   IntColumn get scrollPosition => integer().nullable()();
   BoolColumn get queued => boolean()();
 
@@ -90,9 +92,19 @@ enum ChapterStatus {
   online,
 }
 
+final _gzip = GZipCodec(level: 9, raw: true, gzip: false);
+const _utf8 = Utf8Codec();
+
 @DriftDatabase(tables: [SeriesTable, Chapters])
 class AppDB extends _$AppDB {
   AppDB([QueryExecutor? executor]) : super(executor ?? _open());
+  
+  String? chapterContents(Chapter c) {
+    if (c.content != null) {
+      return _utf8.decoder.convert(_gzip.decoder.convert(c.content!));
+    }
+    return null;
+  }
   
   Future<List<Series>> series() async {
     return select(seriesTable).get();
@@ -111,7 +123,7 @@ class AppDB extends _$AppDB {
       var s = await (select(seriesTable)..where((s) => s.id.equals(id) & s.site.equals(site.index))).getSingle();
       var cs = await (select(chapters)
         ..where((s) => s.id.equals(id) & s.site.equals(site.index))).get();
-      return (s.thumbnail?.length ?? 0) + s.name.length + s.description.length + cs.map((c) => (c.name?.length ?? 0) + (c.content?.length ?? 0)).sum;
+      return (s.thumbnail?.length ?? 0) + s.name.length + s.description.length + cs.map((c) => (c.name.length ?? 0) + (c.content?.length ?? 0)).sum;
     });
   }
   
@@ -261,7 +273,7 @@ class AppDB extends _$AppDB {
 
   Future<void> saveChapter(Site site, String id, int number, String chapterID, String contents, String name) {
     var c =
-        Chapter(site: site, id: id, number: number, queued: false, content: contents, chapterID: chapterID, name: name);
+        Chapter(site: site, id: id, number: number, queued: false, content: Uint8List.fromList(_gzip.encoder.convert(_utf8.encoder.convert(contents))), chapterID: chapterID, name: name);
     return transaction(() async {
       var res = await (select(chapters)..whereSamePrimaryKey(c)).get();
       if (res.isNotEmpty && res[0].queued) {
@@ -375,7 +387,7 @@ class AppDB extends _$AppDB {
   }
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -388,7 +400,23 @@ class AppDB extends _$AppDB {
           await m.addColumn(seriesTable, seriesTable.thumbnailWidth);
           await m.addColumn(seriesTable, seriesTable.thumbnailHeight);
         }
+        if (from < 4) {
+          await m.alterTable(TableMigration(chapters, columnTransformer: {chapters.content: chapters.content.cast<Uint8List>()}));
+          var cs = (await select(chapters).get()).map((c) {
+            if (c.content != null) {
+              var content = utf8.decode(c.content!);
+              return c.copyWith(content: Value(Uint8List.fromList(_gzip.encode(_utf8.encode(content)))));
+            }
+            return c;
+          }).toList();
+          await batch((b) {
+            b.replaceAll(chapters, cs);
+          });
+        }
       });
+      if (from < 4) {
+        await vacuum();
+      }
     });
   }
 }

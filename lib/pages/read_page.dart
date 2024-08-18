@@ -87,7 +87,7 @@ class _ReadPageState extends State<ReadPage> {
                 ],
               ),
             ),
-            chapterContentToSlivers(widget.chapter.content!, context),
+            chapterContentToSlivers(appDB.chapterContents(widget.chapter)!, context),
             SliverList.list(children: [
               ElevatedButton(onPressed: () => _goNext(), child: Text("Next")),
             ]),
@@ -109,6 +109,12 @@ void _inlineElementToSpan(dom.Element e, BuildContext context, TextStyle style, 
       switch (n.localName) {
         case "br":
           spans.add(TextSpan(text: "\n", style: style));
+          break;
+        case "strong":
+          var st2 = style.copyWith(fontWeight: FontWeight.bold);
+          List<InlineSpan> sp2 = [];
+          _inlineElementToSpan(n, context, st2, sp2);
+          spans.add(TextSpan(children: sp2));
           break;
         case "em":
         case "i":

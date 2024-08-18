@@ -24,7 +24,7 @@ A reader and offline library for ScribbleHub series.
 
 - [ ] Site support
   - [x] ScribbleHub
-  - [ ] RoyalRoad
+  - [x] RoyalRoad
   - [ ] WebNovel
   - [ ] More?
 - [x] Offline library
@@ -73,7 +73,7 @@ A reader and offline library for ScribbleHub series.
 - [ ] Update notifications for windows
 - [ ] f-droid
 - [ ] Android background downloads
-- [ ] RoyalRoad
+- [x] RoyalRoad
 
 
 #### 1.2
