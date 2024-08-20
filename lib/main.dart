@@ -52,6 +52,7 @@ void main() async {
   });
   appDB = AppDB();
   // For this schema version, to migrations on the main thread, since they won't work in the drift isolate.
+  // TODO remove this for 1.0 and require a reinstall from 0.9.0, not 0.9.1
   if (appDB.schemaVersion >= 3) {
     await (() async {
       for (var s in await appDB.series()) {
