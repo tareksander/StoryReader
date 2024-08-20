@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2024 Tarek Sander -->
 <component type="desktop-application">
-  <id>io.github.tareksander.story_reader</id>
+  <id>io.github.tareksander.StoryReader</id>
   <url type="homepage">https://github.com/tareksander/StoryReader/tree/main</url>
   <url type="vcs-browser">https://github.com/tareksander/StoryReader/tree/main</url>
   <url type="bugtracker">https://github.com/tareksander/StoryReader/issues</url>
@@ -29,7 +29,7 @@
   </description>
   
   <releases>
-    <release version="1.0.0" date="2024-8-20">
+    <release version="0.9.1" date="2024-8-20">
       <description>
         Initial version.
       </description>
@@ -97,7 +97,7 @@
   <metadata_license>CC-BY-SA-4.0</metadata_license>
   <project_license>MPL-2.0</project_license>
   
-  <launchable type="desktop-id">io.github.tareksander.story_reader.desktop</launchable>
+  <launchable type="desktop-id">io.github.tareksander.StoryReader.desktop</launchable>
   
   <supports>
     <control>pointing</control>
