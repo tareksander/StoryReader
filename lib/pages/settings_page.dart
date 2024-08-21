@@ -108,7 +108,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Flexible(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Text("Current thumbnail storage: ${imageSize.toStringAsFixed(2)}MB", softWrap: true),
+                          child: Text("Current image storage: ${imageSize.toStringAsFixed(2)}MB", softWrap: true),
                         ),
                       )
                     ],),
@@ -126,6 +126,12 @@ class _SettingsPageState extends State<SettingsPage> {
               padding: const EdgeInsets.all(8.0),
               child: Row(children: [
                 ElevatedButton(onPressed: () => _showDeleteLibrary(context), child: Text("Delete library"))
+              ],),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(children: [
+                ElevatedButton(onPressed: () => appDB.vacuum(), child: Text("Compact library"))
               ],),
             ),
             Padding(
