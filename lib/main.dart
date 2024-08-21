@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -14,9 +15,11 @@ import 'package:story_reader/pages/read_page.dart';
 import 'package:story_reader/pages/series_net_page.dart';
 import 'package:story_reader/pages/series_page.dart';
 import 'package:story_reader/pages/share_network_page.dart';
+import 'package:story_reader/pages/update_page.dart';
 import 'package:story_reader/rr.dart';
 import 'package:story_reader/series_data.dart';
 import 'package:story_reader/sh.dart';
+import 'package:story_reader/update.dart';
 import 'pages/main_page.dart';
 import 'pages/pref_loading.dart';
 
@@ -37,16 +40,23 @@ final router = GoRouter(routes: [
   }),
   GoRoute(path: "/shareNet", pageBuilder: (c, s) => MaterialPage(child: RootRestorationScope(restorationId: "shareNet", child: ShareNetworkPage()))),
   GoRoute(path: "/loadNet", pageBuilder: (c, s) => MaterialPage(child: RootRestorationScope(restorationId: "loadNet", child: LoadNetworkPage()))),
-  GoRoute(path: "/licenses", pageBuilder: (c, s) => MaterialPage(child: LicensePage()))
+  GoRoute(path: "/licenses", pageBuilder: (c, s) => MaterialPage(child: LicensePage())),
+  GoRoute(path: "/update", pageBuilder: (c, s) => MaterialPage(child: UpdatePage()))
 ], restorationScopeId: "router");
 
 late AppDB appDB;
 
 final shC = SHAPI.create();
 final rrC = RRAPI.create();
+late final Future<String?> newerVersionAvailable;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isWindows) {
+    newerVersionAvailable = updateAvailable();
+  } else {
+    newerVersionAvailable = Future.value(null);
+  }
   LicenseRegistry.addLicense(() async* {
     yield LicenseEntryWithLineBreaks(["Roboto", "RobotoMono"], await rootBundle.loadString("fonts/LICENSE.txt"));
   });
