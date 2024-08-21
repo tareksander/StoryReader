@@ -28,6 +28,8 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
   int? thumbnailWidth;
   int? thumbnailHeight;
   
+  bool errored = false;
+  
   Future<void> _setThumbnail(Uint8List? thumbnail) async {
     if (Preferences.useImages.value && thumbnail != null) {
       var b = await ui.ImmutableBuffer.fromUint8List(thumbnail);
@@ -52,6 +54,12 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
           var thumbnail = b.thumbnail;
           await _setThumbnail(thumbnail);
           return b;
+        }).onError((d, t) {
+          if (! errored) {
+            errored = true;
+            Future.microtask(() async => router.pop());
+          }
+          return SeriesData(site: widget.site, id: widget.id);
         });
         
         shC
@@ -60,7 +68,12 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
             .then((cs) => setState(() {
                   chapters = cs.reversed.toList();
                 }))
-            .onError((d, t) => router.pop());
+            .onError((d, t) {
+              if (! errored) {
+                errored = true;
+                Future.microtask(() async => router.pop());
+              }
+            });
       case Site.royalRoad:
         req = rrC.series(widget.id, widget.name).then((r) async {
           var b = r.body!;
@@ -72,6 +85,12 @@ class _SeriesNetPageState extends State<SeriesNetPage> {
             chapters = cl;
           });
           return s;
+        }).onError((d, t) {
+          if (! errored) {
+            errored = true;
+            Future.microtask(() async => router.pop());
+          }
+          return SeriesData(site: widget.site, id: widget.id);
         });
     }
   }

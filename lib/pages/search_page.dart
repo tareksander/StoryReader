@@ -118,10 +118,10 @@ class _SearchPageState extends State<SearchPage> {
     if (text.text.length > 2) {
       setState(() {
         _result = null;
-        req = Future.wait([shC.simpleSearch(text.text).then((r) => r.body!), rrC.simpleSearch(text.text).then((r) {
+        req = Future.wait([shC.simpleSearch(text.text).then((r) => r.body!).onError((e, t) => []), rrC.simpleSearch(text.text).then((r) {
           var l = r.body!;
           return l.getRange(0, min(l.length, 10));
-        })]).then((l) => l.flattened.sortedBy((s) => s.name).toList());
+        }).onError((e, t) => [])]).then((l) => l.flattened.sortedBy((s) => s.name).toList());
       });
     }
   }

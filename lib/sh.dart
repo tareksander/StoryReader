@@ -143,6 +143,7 @@ final class RetryInterceptor implements Interceptor {
     Response<BodyType>? res;
     var headers = Map.fromEntries(chain.request.headers.entries);
     // TODO use user agent if a site requires it
+    //headers["User-Agent"] = "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0";
     var req = chain.request.copyWith(headers: headers);
     for (int i = 0; i < 3; i++) {
       try {
@@ -160,6 +161,7 @@ final class RetryInterceptor implements Interceptor {
           }
           //print(res.statusCode);
           //print(res.headers);
+          //File("cf-error.html").writeAsString(res.errorWhereType()!);
           //print(res.error);
         }
       }
