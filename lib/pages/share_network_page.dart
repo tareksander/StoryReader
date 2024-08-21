@@ -44,6 +44,7 @@ class _ShareNetworkPageState extends State<ShareNetworkPage> {
         var resp = <String, dynamic>{
           "series": (await appDB.select(appDB.seriesTable).get()).map((s) => s.toJson()).toList(),
           "chapters": (await appDB.select(appDB.chapters).get()).map((c) => c.toJson()).toList(),
+          "chapterImages": (await appDB.select(appDB.chapterImages).get()).map((i) => i.toJson()).toList(),
         };
         if (mounted) {
           router.pop();

@@ -82,7 +82,9 @@ class _LoadNetworkPageState extends State<LoadNetworkPage> {
                                           .toList(),
                                       (data["chapters"] as List<dynamic>)
                                           .map((c) => Chapter.fromJson(c as Map<String, dynamic>))
-                                          .toList());
+                                          .toList(),
+                                      (data["chapterImages"] as List<dynamic>)
+                                  .map((i) => ChapterImage.fromJson(i as Map<String, dynamic>)).toList());
                                   //print("replaced");
                                 }
                               } catch (_) {}

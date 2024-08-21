@@ -66,6 +66,14 @@ class Chapters extends Table {
   Set<Column<Object>>? get primaryKey => {site, id, number};
 }
 
+class ChapterImages extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get url => text().unique()();
+  BlobColumn get image => blob().nullable()();
+  
+  @override
+  String? get tableName => "images";
+}
 
 Future<File> _dbFile() async {
   final folder = await getApplicationSupportDirectory();
@@ -95,7 +103,7 @@ enum ChapterStatus {
 final _gzip = GZipCodec(level: 9, raw: true, gzip: false);
 const _utf8 = Utf8Codec();
 
-@DriftDatabase(tables: [SeriesTable, Chapters])
+@DriftDatabase(tables: [SeriesTable, Chapters, ChapterImages])
 class AppDB extends _$AppDB {
   AppDB([QueryExecutor? executor]) : super(executor ?? _open());
   
@@ -114,8 +122,26 @@ class AppDB extends _$AppDB {
     return (await _dbFile()).length();
   }
   
+  Future<int> addImage(String url) {
+    return transaction(() async {
+      var i = await (select(chapterImages)..where((i) => i.url.equals(url))).getSingleOrNull();
+      if (i != null) {
+        return i.id;
+      }
+      await update(chapterImages).write(ChapterImagesCompanion.insert(url: url));
+      return (await (select(chapterImages)..where((i) => i.url.equals(url))).getSingle()).id;
+    });
+  }
+  
+  Future<void> setImageData(int id, Uint8List image) {
+    return (update(chapterImages)..where((i) => i.id.equals(id))).write(ChapterImagesCompanion(image: Value(image)));
+  }
+  
   Future<int> imageSize() {
-    return (select(seriesTable).map((s) => s.thumbnail)).get().then((l) => l.whereNotNull().map((i) => i.length).sum);
+    return Future.wait([
+      select(seriesTable).map((s) => s.thumbnail).get().then((l) => l.whereNotNull().map((i) => i.length).sum),
+      select(chapterImages).map((s) => s.image).get().then((l) => l.whereNotNull().map((i) => i.length).sum)
+    ]).then((l) => l.sum);
   }
 
   Future<int> seriesSize(Site site, String id) {
@@ -128,7 +154,10 @@ class AppDB extends _$AppDB {
   }
   
   Future<void> deleteImages() {
-    return customUpdate("UPDATE series SET thumbnail = NULL", updates: {seriesTable}, updateKind: UpdateKind.update);
+    return transaction(() async {
+      await customUpdate("UPDATE series SET thumbnail = NULL", updates: {seriesTable}, updateKind: UpdateKind.update);
+      await delete(chapterImages).go();
+    });
   }
   
   Future<void> vacuum() {
@@ -138,17 +167,20 @@ class AppDB extends _$AppDB {
   Future<void> deleteDB() {
     return transaction(() async {
       await delete(seriesTable).go();
-      await delete(this.chapters).go();
+      await delete(chapters).go();
+      await delete(chapterImages).go();
     });
   }
   
-  Future<void> replaceDB(List<Series> series, List<Chapter> chapters) {
+  Future<void> replaceDB(List<Series> series, List<Chapter> chapters, List<ChapterImage> chapterImages) {
     return transaction(() async {
       await delete(seriesTable).go();
       await delete(this.chapters).go();
+      await delete(this.chapterImages).go();
       await batch((batch) async {
         batch.insertAll(seriesTable, series);
         batch.insertAll(this.chapters, chapters);
+        batch.insertAll(this.chapterImages, chapterImages);
       });
     });
   }
@@ -387,7 +419,7 @@ class AppDB extends _$AppDB {
   }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -416,6 +448,9 @@ class AppDB extends _$AppDB {
       });
       if (from < 4) {
         await vacuum();
+      }
+      if (from < 5) {
+        await m.createTable(chapterImages);
       }
     });
   }
