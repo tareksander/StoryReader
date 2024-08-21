@@ -39,6 +39,8 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    Size ws = MediaQuery.sizeOf(context);
+    double iw = (ws.width < 500) ? ws.width / 3 : 250;
     return SingleChildScrollView(restorationId: "SearchScroll",
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -79,25 +81,32 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Row(
                                     children: [
                                       if (Preferences.useImages.value && s.thumbnail != null)
-                                        ConstrainedBox(constraints: const BoxConstraints(minWidth: 250, maxWidth: 250),
+                                        ConstrainedBox(constraints: BoxConstraints(minWidth: iw, maxWidth: iw),
                                         child: Center(child: Image.memory(s.thumbnail!, fit: BoxFit.scaleDown))),
-                                      IntrinsicHeight(
-                                        child: Column(
-                                          children: [
-                                            Flexible(
-                                              child: TextButton(
-                                                  onPressed: () {
-                                                    var extra = <String, dynamic>{
-                                                      "id": s.id,
-                                                      "site": s.site.index,
-                                                      "name": s.name,
-                                                    };
-                                                    router.push("/seriesNet", extra: extra);
-                                                  },
-                                                  child: Text(s.name, softWrap: true,)),
-                                            ),
-                                            Flexible(child: Text("Site: ${s.site.toString()}", softWrap: true,))
-                                          ],
+                                      Flexible(
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(left: 8.0),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Flexible(
+                                                child: TextButton(
+                                                    onPressed: () {
+                                                      var extra = <String, dynamic>{
+                                                        "id": s.id,
+                                                        "site": s.site.index,
+                                                        "name": s.name,
+                                                      };
+                                                      router.push("/seriesNet", extra: extra);
+                                                    },
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child: Text(s.name, softWrap: true,),
+                                                    )),
+                                              ),
+                                              Flexible(child: Text("Site: ${s.site.toString()}", softWrap: true,))
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ],

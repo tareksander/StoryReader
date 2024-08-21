@@ -26,7 +26,7 @@ class _LibraryPageState extends State<LibraryPage> {
   @override
   Widget build(BuildContext context) {
     Size ws = MediaQuery.sizeOf(context);
-    double iw = (ws.width < 500) ? ws.width / 3 : 250;
+    double iw = (ws.width < 500) ? ws.width / 4 : 250;
     return Scaffold(
       appBar: AppBar(
         actions: [
@@ -80,20 +80,28 @@ class _LibraryPageState extends State<LibraryPage> {
                           ),
                         Flexible(
                             child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(4.0),
                           child: ElevatedButton(
                               onPressed: () => router.push("/series", extra: s.toJson()),
-                              child: Text(s.name, softWrap: true)),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: Text(s.name, softWrap: true),
+                              )),
                         )),
                         if (s.lastRead != null)
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: ElevatedButton(
-                                onPressed: () async => router.push("/read",
-                                    extra: (await appDB.chaptersForFuture(SeriesData(site: s.site, id: s.id)))
-                                        .firstWhere((c) => c.number == s.lastRead)
-                                        .toJson()),
-                                child: Text("Continue")),
+                          Flexible(
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: ElevatedButton(
+                                  onPressed: () async => router.push("/read",
+                                      extra: (await appDB.chaptersForFuture(SeriesData(site: s.site, id: s.id)))
+                                          .firstWhere((c) => c.number == s.lastRead)
+                                          .toJson()),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: Text("Continue"),
+                                  )),
+                            ),
                           ),
                       ],
                     );
