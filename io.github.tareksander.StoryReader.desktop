@@ -6,7 +6,7 @@ Name=StoryReader
 Comment=Summary
 Categories=Network;Amusement;Adult;
 
-Icon=io.github.tareksander.story_reader
+Icon=io.github.tareksander.StoryReader
 Exec=story_reader
 Terminal=false
 

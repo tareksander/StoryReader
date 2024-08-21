@@ -59,8 +59,7 @@ A reader and offline library for ScribbleHub series.
 - [x] App icon
 - [ ] Distribution
   - [x] FlatPak
-    - [ ] ...on FlatHub
-      - [x] TODO: Change app id to io.github
+    - [x] ...on FlatHub
   - [x] Zip archive for windows
   - [x] APK
 - [ ] Color scheme
