@@ -57,7 +57,7 @@ A reader and offline library for ScribbleHub series.
 
 
 - [x] App icon
-- [ ] Distribution
+- [x] Distribution
   - [x] FlatPak
     - [x] ...on FlatHub
   - [x] Zip archive for windows
@@ -70,8 +70,16 @@ A reader and offline library for ScribbleHub series.
 #### 1.1
 
 - [ ] Update notifications for windows
+  - [ ] check GitHub releases
 - [ ] f-droid
+  - [ ] change id to io.github
+  - [ ] create build metadata
+    - orient by other flutter apps
+  - [ ] test build
+  - [ ] submit PR
 - [ ] Android background downloads
+  - [ ] Foreground service plugin
+  - [ ] start/stop the service with the download manager isolate
 - [x] RoyalRoad
 
 
@@ -81,6 +89,17 @@ A reader and offline library for ScribbleHub series.
 - [ ] More?
 - [ ] Advanced search
 - [ ] Library import
+
+#### 1.3
+
+- [ ] loading comments
+- [ ] loading reviews
+- [ ] Linking site accounts
+  - [ ] liking chapters
+  - [ ] liking comments
+  - [ ] creating comments
+  - [ ] creating reviews
+  - [ ] rating stories
 
 
 ## License
