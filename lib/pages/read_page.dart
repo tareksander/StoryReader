@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/src/rendering/sliver.dart';
+import 'package:flutter/src/rendering/sliver_grid.dart';
 import 'package:html/parser.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:story_reader/db.dart';
+import 'package:story_reader/grid.dart';
 import 'package:story_reader/main.dart';
 import 'package:story_reader/prefs.dart';
 import 'package:story_reader/series_data.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../flexible_table.dart';
 
 class ReadPage extends StatefulWidget {
   final Chapter chapter;
@@ -98,61 +104,89 @@ class _ReadPageState extends State<ReadPage> {
   }
 }
 
-void _inlineElementToSpan(dom.Element e, BuildContext context, TextStyle style, List<InlineSpan> spans) {
+void _inlineElementToSpan(dom.Element e, BuildContext context, TextStyle style, List<InlineSpan> spans, [bool paragraphBreaks = true]) {
+  String newlines = "";
+  bool hadText = false;
+  delayedNewlines() {
+    if (!paragraphBreaks && newlines.isNotEmpty) {
+      if (hadText) {
+        spans.add(TextSpan(text: newlines, style: style));
+      }
+      newlines = "";
+    }
+  }
   for (var n in e.nodes) {
     if (n is dom.Text) {
-      spans.add(TextSpan(text: n.text, style: style));
+      delayedNewlines();
+      hadText = true;
+      spans.add(TextSpan(text: n.text.replaceAll("\n", ""), style: style));
     }
     if (n is dom.Element) {
       //print(e.localName);
       //print(e.outerHtml);
       switch (n.localName) {
         case "br":
-          spans.add(TextSpan(text: "\n", style: style));
+          if (!paragraphBreaks) {
+            newlines += "\n";
+          } else {
+            spans.add(TextSpan(text: "\n", style: style));
+          }
           break;
         case "strong":
+          delayedNewlines();
+          hadText = true;
           var st2 = style.copyWith(fontWeight: FontWeight.bold);
           List<InlineSpan> sp2 = [];
-          _inlineElementToSpan(n, context, st2, sp2);
+          _inlineElementToSpan(n, context, st2, sp2, paragraphBreaks);
           spans.add(TextSpan(children: sp2));
           break;
         case "em":
         case "i":
+          delayedNewlines();
+          hadText = true;
           var st2 = style.copyWith(fontStyle: FontStyle.italic);
           List<InlineSpan> sp2 = [];
-          _inlineElementToSpan(n, context, st2, sp2);
+          _inlineElementToSpan(n, context, st2, sp2, paragraphBreaks);
           spans.add(TextSpan(children: sp2));
           break;
         case "a":
+          delayedNewlines();
+          hadText = true;
           var st2 = style.copyWith(color: Colors.blue);
           List<InlineSpan> sp2 = [];
-          _inlineElementToSpan(n, context, st2, sp2);
+          _inlineElementToSpan(n, context, st2, sp2, paragraphBreaks);
           spans.add(WidgetSpan(
               child: GestureDetector(
-                  onTap: () {
-                    // TODO open link in browser, url_opener package from flutter.dev
-                  },
+                  onTap: () => launchUrl(Uri.parse(n.attributes["href"]!), mode: LaunchMode.externalApplication),
                   child: RichText(text: TextSpan(children: sp2)))));
           break;
         case "img":
-          // TODO cache images: cached_network_image?
           if (Preferences.useImages.value) {
             spans.add(WidgetSpan(child: Image.network(n.attributes["src"]!)));
           }
           break;
         case "p":
         case "div":
-          List<InlineSpan> s2 = [];
-          _inlineElementToSpan(n, context, style, s2);
-          spans.add(WidgetSpan(
-              child: Padding(
-            padding: EdgeInsets.symmetric(vertical: style.fontSize! / 2.0),
-            child: RichText(text: TextSpan(children: s2, style: style)),
-          )));
+          delayedNewlines();
+          hadText = true;
+          if (! paragraphBreaks) {
+            _inlineElementToSpan(n, context, style, spans, paragraphBreaks);
+          } else {
+            List<InlineSpan> s2 = [];
+            _inlineElementToSpan(n, context, style, s2, paragraphBreaks);
+            spans.add(WidgetSpan(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: style.fontSize! / 2.0),
+                  child: RichText(text: TextSpan(children: s2, style: style)),
+                )));
+          }
+          break;
+        case "hr":
+          spans.add(WidgetSpan(child: Divider()));
           break;
         case "span":
         default:
-          _inlineElementToSpan(n, context, style, spans);
+          _inlineElementToSpan(n, context, style, spans, paragraphBreaks);
           break;
       }
     }
@@ -165,7 +199,7 @@ SliverList chapterContentToSlivers(String content, BuildContext context) {
   var frag = parseFragment(content);
   List<Widget> ws = [];
   for (var e in frag.children) {
-    if (e.localName == "p") {
+    if (e.localName == "p" || e.localName == "div") {
       ws.add(Padding(
         padding: EdgeInsets.symmetric(vertical: style.fontSize! / 2),
         child: _inlineElementToWidget(e, context, style),
@@ -182,14 +216,20 @@ SliverList chapterContentToSlivers(String content, BuildContext context) {
       ));
     }
     if (e.localName == "table") {
-      // TODO table parsing
       var rows = e.getElementsByTagName("tr");
-      // then td in tr, and in td there can be block elements, inline elements or text directly
-      // Problem: There is no Flutter layout algorith similar to the CSS grid.
-      ws.add(CustomScrollView(shrinkWrap: true, slivers: [
-        SliverList.list(children: [Center(child: Text("Test"))])
-      ],));
-      
+      List<FlexibleTableCell> cells = [];
+      for (var (y, r) in rows.indexed) {
+        for (var (x, c) in r.children.indexed) {
+          cells.add(FlexibleTableCell(col: x, row: y, child: Padding(
+            padding: const EdgeInsets.all(4.0),
+            child: _inlineElementToWidget(c, context, style, false),
+          )));
+        }
+      }
+      ws.add(Card(child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: FlexibleTable(children: cells),
+      )));
     }
     if (e.classes.contains("wi_news")) {
       String title = e.children[0].nodes.last.text!;
@@ -247,9 +287,9 @@ SliverList chapterContentToSlivers(String content, BuildContext context) {
           .toList());
 }
 
-Widget _inlineElementToWidget(dom.Element p, BuildContext context, TextStyle style) {
+Widget _inlineElementToWidget(dom.Element p, BuildContext context, TextStyle style, [bool paragraphBreaks = true]) {
   List<InlineSpan> spans = [];
-  _inlineElementToSpan(p, context, style, spans);
+  _inlineElementToSpan(p, context, style, spans, paragraphBreaks);
   return RichText(text: TextSpan(children: spans, style: style));
 }
 

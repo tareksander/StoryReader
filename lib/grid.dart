@@ -1,18 +1,21 @@
+import 'dart:collection';
+
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
-class GridExtended extends StatelessWidget {
-  final List<GridCell> children;
+class SimpleTable extends StatelessWidget {
+  final List<SimpleTableCell> children;
   
-  const GridExtended({super.key, required this.children});
+  const SimpleTable({super.key, required this.children});
 
   @override
   Widget build(BuildContext context) {
-    return CustomMultiChildLayout(delegate: _GridDelegate(children), children: children.map((e) => e.child).toList(),);
+    return IntrinsicHeight(child: CustomMultiChildLayout(delegate: _GridDelegate(children), children: children.map((e) => e.child).toList(),));
   }
 }
 
 class _GridDelegate extends MultiChildLayoutDelegate {
-  final List<GridCell> children;
+  final List<SimpleTableCell> children;
   
   _GridDelegate(this.children);
 
@@ -21,6 +24,27 @@ class _GridDelegate extends MultiChildLayoutDelegate {
     // TODO ask each child for the size
     // create a grid out of the maximum sized in each row and column
     // position the children centered in their cells
+    Map<SimpleTableCell, Size> sizes = {};
+    for (var c in children) {
+      sizes[c] = layoutChild((c.x, c.y), const BoxConstraints());
+    }
+    int minY = children.map((c) => c.y).min;
+    int maxY = children.map((c) => c.y).max;
+    double maxWidth = children.groupListsBy((c) => c.y).map((k, v) => MapEntry(k, v.map((c) => sizes[c]!.width).max)).values.max;
+    double currentY = 0;
+    for (int y = minY; y <= maxY; y++) {
+      double currentX = 0;
+      var rowChildren = children.where((c) => c.y == y).sortedBy<num>((c) => c.x);
+      double rowHeight = rowChildren.map((c) => sizes[c]!.height).max;
+      if (rowChildren.isEmpty) {
+        continue;
+      }
+      for (var c in rowChildren) {
+        positionChild((c.x, c.y), Offset(currentX, currentY));
+        currentX += maxWidth / rowChildren.length;
+      }
+      currentY += rowHeight;
+    }
   }
 
   @override
@@ -35,16 +59,17 @@ class _GridDelegate extends MultiChildLayoutDelegate {
 }
 
 
-final class GridCell {
-  final int startX;
-  final int startY;
-  final int sizeX;
-  final int sizeY;
+final class SimpleTableCell {
+  final int x;
+  final int y;
   late final Widget child;
   
-  GridCell({required this.startX, required this.startY, this.sizeX = 1, this.sizeY = 1, required Widget child}) {
-    this.child = LayoutId(id: [startX, startY], child: child);
+  SimpleTableCell({required this.x, required this.y, required Widget child}) {
+    this.child = LayoutId(id: (x, y), child: child);
   }
 }
+
+
+
 
 
