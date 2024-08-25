@@ -3,7 +3,6 @@ Version=1.0
 Type=Application
 
 Name=StoryReader
-Comment=Summary
 Categories=Network;Amusement;Adult;
 
 Icon=io.github.tareksander.StoryReader

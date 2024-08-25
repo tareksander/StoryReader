@@ -6,17 +6,13 @@
   <url type="vcs-browser">https://github.com/tareksander/StoryReader/tree/main</url>
   <url type="bugtracker">https://github.com/tareksander/StoryReader/issues</url>
   
-  <name>StoryReader</name>
-  <summary>An offline library and reader for stories on ScribbleHub and RoyalRoad</summary>
+  <name>Story Reader</name>
+  <summary>Offline reader for web novels</summary>
   
   <description>
     <p>
-      Sites:
+      Currently works for the RoyalRoad and ScribbleHub sites.
     </p>
-    <ul>
-      <li>ScribbleHub</li>
-      <li>RoyalRoad</li>
-    </ul>
     <p>
       Features:
     </p>
@@ -46,31 +42,31 @@
   </branding>
   
   <screenshots>
-    <screenshot type="default">
+    <screenshot type="default" xml:lang="en">
       <image>https://github.com/tareksander/StoryReader/blob/e013160adeb82f790b475b72f0a7b932f84b1553/screenshots/1.png?raw=true</image>
       <caption>Library Page</caption>
     </screenshot>
-    <screenshot>
+    <screenshot xml:lang="en">
       <image>https://github.com/tareksander/StoryReader/blob/e013160adeb82f790b475b72f0a7b932f84b1553/screenshots/2.png?raw=true</image>
       <caption>Settings Page</caption>
     </screenshot>
-    <screenshot>
+    <screenshot xml:lang="en">
       <image>https://github.com/tareksander/StoryReader/blob/e013160adeb82f790b475b72f0a7b932f84b1553/screenshots/3.png?raw=true</image>
       <caption>Search Page</caption>
     </screenshot>
-    <screenshot>
+    <screenshot xml:lang="en">
       <image>https://github.com/tareksander/StoryReader/blob/e013160adeb82f790b475b72f0a7b932f84b1553/screenshots/4.png?raw=true</image>
       <caption>Online Series Screen</caption>
     </screenshot>
-    <screenshot>
+    <screenshot xml:lang="en">
       <image>https://github.com/tareksander/StoryReader/blob/e013160adeb82f790b475b72f0a7b932f84b1553/screenshots/5.png?raw=true</image>
       <caption>Downloads Page</caption>
     </screenshot>
-    <screenshot>
+    <screenshot xml:lang="en">
       <image>https://github.com/tareksander/StoryReader/blob/e013160adeb82f790b475b72f0a7b932f84b1553/screenshots/6.png?raw=true</image>
       <caption>Library Series Screen</caption>
     </screenshot>
-    <screenshot>
+    <screenshot xml:lang="en">
       <image>https://github.com/tareksander/StoryReader/blob/e013160adeb82f790b475b72f0a7b932f84b1553/screenshots/7.png?raw=true</image>
       <caption>Chapter Screen</caption>
     </screenshot>
