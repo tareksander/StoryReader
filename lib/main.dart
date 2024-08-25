@@ -16,6 +16,7 @@ import 'package:story_reader/pages/series_net_page.dart';
 import 'package:story_reader/pages/series_page.dart';
 import 'package:story_reader/pages/share_network_page.dart';
 import 'package:story_reader/pages/update_page.dart';
+import 'package:story_reader/prefs.dart';
 import 'package:story_reader/rr.dart';
 import 'package:story_reader/series_data.dart';
 import 'package:story_reader/sh.dart';
@@ -52,6 +53,7 @@ late final Future<String?> newerVersionAvailable;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Preferences.load();
   if (Platform.isWindows) {
     newerVersionAvailable = updateAvailable();
   } else {
@@ -80,7 +82,7 @@ void main() async {
     })();
   }
   startDownloadManager();
-  runApp(const RootRestorationScope(restorationId: "root", child: ProviderScope(child: MainApp())));
+  runApp(const ThemeChangerWidget(child: RootRestorationScope(restorationId: "root", child: ProviderScope(child: MainApp()))));
 }
 
 class MainApp extends StatelessWidget {
@@ -93,9 +95,75 @@ class MainApp extends StatelessWidget {
       routerConfig: router,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate],
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark)),
+      theme: Theme.of(context),
       restorationScopeId: "app",
       debugShowCheckedModeBanner: false,
     );
   }
 }
+
+class ThemeChangerWidget extends StatefulWidget {
+  final Widget child;
+  
+  const ThemeChangerWidget({super.key, required this.child});
+
+  @override
+  State<ThemeChangerWidget> createState() => _ThemeChangerWidgetState();
+}
+
+class _ThemeChangerWidgetState extends State<ThemeChangerWidget> {
+  ThemeData theme = ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark));
+  
+  @override
+  void initState() {
+    super.initState();
+    onThemeChange();
+    Preferences.darkMode.addListener(onThemeChange);
+    Preferences.themeSeed.addListener(onThemeChange);
+  }
+  
+  @override
+  void dispose() {
+    super.dispose();
+    Preferences.darkMode.removeListener(onThemeChange);
+    Preferences.themeSeed.removeListener(onThemeChange);
+  }
+  
+  onThemeChange() {
+    Color c;
+    switch (Preferences.themeSeed.value) {
+      case 1:
+        c = Colors.red;
+        break;
+      case 2:
+        c = Colors.yellow;
+        break;
+      case 3:
+        c = Colors.green;
+        break;
+      case 4:
+        c = Colors.orange;
+        break;
+      case 5:
+        c = Colors.purple;
+        break;
+      case 6:
+        c = Colors.pink;
+        break;
+      case 7:
+        c = Colors.cyan;
+        break;
+      default:
+        c = Colors.blue;
+    }
+    setState(() {
+      theme = ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: c, brightness:  Preferences.darkMode.value ? Brightness.dark : Brightness.light));
+    });
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Theme(data: theme, child: widget.child);
+  }
+}
+

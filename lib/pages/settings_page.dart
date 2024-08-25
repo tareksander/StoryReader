@@ -31,7 +31,11 @@ class _SettingsPageState extends State<SettingsPage> {
         Preferences.readingFontSize.value = width;
       }
     });
-    
+    Preferences.themeSeed.addListener(onThemeColor);
+  }
+  
+  void onThemeColor() {
+    setState(() {});
   }
   
   @override
@@ -39,6 +43,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.dispose();
     sizeC.dispose();
     widthC.dispose();
+    Preferences.themeSeed.removeListener(onThemeColor);
   }
   
   @override
@@ -70,6 +75,32 @@ class _SettingsPageState extends State<SettingsPage> {
                     Preferences.useImages.value = v;
                   });
                 })
+              ],),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 32.0),
+                  child: Text("Dark mode: "),
+                ), Switch(value: Preferences.darkMode.value, onChanged: (v) {
+                  setState(() {
+                    Preferences.darkMode.value = v;
+                  });
+                })
+              ],),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 32.0),
+                  child: Text("Theme color: "),
+                ), DropdownButton(
+                    items: Preferences.themeColors.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                    onChanged: (v) => Preferences.themeSeed.value = Preferences.themeColors.indexOf(v!),
+                    value: Preferences.themeColors[Preferences.themeSeed.value],
+                )
               ],),
             ),
             Padding(
