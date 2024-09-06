@@ -34,7 +34,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.tsander.story_reader"
+        applicationId = "io.github.tareksander.StoryReader"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdk = flutter.minSdkVersion
