@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:html/dom.dart' as dom;
 
 part 'rich_text_tree.g.dart';
 
@@ -6,11 +7,13 @@ const JRTE = JsonSerializable(converters: [_RichTextElementConverter()]);
 
 sealed class RichTextElement {
   Map<String, dynamic> toJson();
+  
+  void visit(void Function(RichTextElement) f);
 }
 
 
 @JRTE
-final class RichTextSpan extends RichTextElement {
+final class RichTextText extends RichTextElement {
   static const String tag = "s";
   
   @JsonKey(name: "c")
@@ -18,10 +21,39 @@ final class RichTextSpan extends RichTextElement {
   
   @override
   Map<String, dynamic> toJson() {
+    return _$RichTextTextToJson(this)..["\$"] = tag;
+  }
+  
+  RichTextText(this.content);
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
+  }
+  
+}
+
+@JRTE
+final class RichTextSpan extends RichTextElement {
+  static const String tag = "o";
+  
+  @JsonKey(name: "c")
+  List<RichTextElement> children;
+  
+  @override
+  Map<String, dynamic> toJson() {
     return _$RichTextSpanToJson(this)..["\$"] = tag;
   }
 
-  RichTextSpan(this.content);
+  RichTextSpan(this.children);
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
+    for (var c in children) {
+      f(c);
+    }
+  }
 }
 
 @JRTE
@@ -37,6 +69,14 @@ final class RichTextParagraph extends RichTextElement {
   }
 
   RichTextParagraph(this.children);
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
+    for (var c in children) {
+      f(c);
+    }
+  }
 }
 
 
@@ -47,6 +87,11 @@ final class RichTextBreak extends RichTextElement {
   @override
   Map<String, dynamic> toJson() {
     return {"\$": tag};
+  }
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
   }
   
 }
@@ -64,6 +109,14 @@ final class RichTextCodeBlock extends RichTextElement {
   }
 
   RichTextCodeBlock(this.children);
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
+    for (var c in children) {
+      f(c);
+    }
+  }
 }
 
 
@@ -80,6 +133,14 @@ final class RichTextCursive extends RichTextElement {
   }
 
   RichTextCursive(this.children);
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
+    for (var c in children) {
+      f(c);
+    }
+  }
 }
 
 @JRTE
@@ -95,6 +156,14 @@ final class RichTextBold extends RichTextElement {
   }
 
   RichTextBold(this.children);
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
+    for (var c in children) {
+      f(c);
+    }
+  }
 }
 
 @JRTE
@@ -110,6 +179,11 @@ final class RichTextTable extends RichTextElement {
   }
 
   RichTextTable(this.cells);
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
+  }
 }
 
 @JRTE
@@ -119,12 +193,23 @@ final class RichTextLink extends RichTextElement {
   @JsonKey(name: "c")
   List<RichTextElement> children;
   
+  @JsonKey(name: "u")
+  String url;
+  
   @override
   Map<String, dynamic> toJson() {
     return _$RichTextLinkToJson(this)..["\$"] = tag;
   }
 
-  RichTextLink(this.children);
+  RichTextLink(this.children, this.url);
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
+    for (var c in children) {
+      f(c);
+    }
+  }
 }
 
 @JsonSerializable()
@@ -140,11 +225,19 @@ final class RichTextImage extends RichTextElement {
   }
 
   RichTextImage(this.image);
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
+  }
 }
 
 @JRTE
 final class RichTextAnnouncement extends RichTextElement {
   static const String tag = "a";
+  
+  @JsonKey(name: "t")
+  String title;
   
   @JsonKey(name: "c")
   List<RichTextElement> children;
@@ -154,7 +247,15 @@ final class RichTextAnnouncement extends RichTextElement {
     return _$RichTextAnnouncementToJson(this)..["\$"] = tag;
   }
 
-  RichTextAnnouncement(this.children);
+  RichTextAnnouncement(this.title, this.children);
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
+    for ( var c in children) {
+      f(c);
+    }
+  }
 }
 
 @JRTE
@@ -170,6 +271,14 @@ final class RichTextAuthorNote extends RichTextElement {
   }
 
   RichTextAuthorNote(this.children);
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
+    for (var c in children) {
+      f(c);
+    }
+  }
 }
 
 
@@ -180,6 +289,11 @@ final class RichTextDivider extends RichTextElement {
   @override
   Map<String, dynamic> toJson() {
     return {"\$": tag};
+  }
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
   }
 }
 
@@ -198,16 +312,140 @@ final class RichTextFootnoteReference extends RichTextElement {
   
 
   RichTextFootnoteReference(this.footnote);
+
+  @override
+  void visit(void Function(RichTextElement p1) f) {
+    f(this);
+  }
 }
 
 @JRTE
 final class RichTextDocument {
   @JsonKey(name: "f")
-  final List<RichTextElement> footnotes;
+  late final List<RichTextElement> footnotes;
   @JsonKey(name: "d")
-  final List<RichTextElement> document;
+  late final List<RichTextElement> document;
+  
+  /// Stores the source Uris for images encountered when converting from HTML
+  @JsonKey(includeToJson: false, includeFromJson: false, defaultValue: [])
+  late final List<Uri> imageSources;
 
   RichTextDocument(this.footnotes, this.document);
+  
+  RichTextDocument.html(dom.NodeList nodes) {
+    footnotes = [];
+    imageSources = [];
+    document = nodes.map((e) => toRTE(e).$1).toList();
+  }
+
+  (List<RichTextElement>, bool) nodesToRTE(dom.NodeList nl, [bool paragraphBreaks = true]) {
+    var c = nl.map((c) => toRTE(c, paragraphBreaks)).toList();
+    return (c.map((e) => e.$1).toList(), c.map((e) => e.$2).any((e) => e));
+  }
+  
+  (RichTextElement, bool) toRTE(dom.Node n, [bool paragraphBreaks = true]) {
+    if (n is dom.Element) {
+      Lazy<(List<RichTextElement>, bool)> c = Lazy(() => nodesToRTE(n.nodes, paragraphBreaks));
+      switch (n.localName) {
+        case "pre":
+          return (RichTextCodeBlock(c.v.$1), c.v.$2);
+        case "hr":
+          return (RichTextDivider(), false);
+        case "br":
+          if (paragraphBreaks) {
+            return (RichTextText("\n"), false);
+          } else {
+            return (RichTextText(""), false);
+          }
+        case "strong":
+          return (RichTextBold(c.v.$1), c.v.$2);
+        case "i":
+        case "em":
+          return (RichTextCursive(c.v.$1), c.v.$2);
+        case "a":
+          Uri? href = null;
+          String? hrefs = n.attributes["href"];
+          if (hrefs != null) {
+            href = Uri.tryParse(hrefs);
+          }
+          if (href != null) {
+            return (RichTextLink(c.v.$1, href.toString()), c.v.$2);
+          } else {
+            return (RichTextSpan(c.v.$1), c.v.$2);
+          }
+        case "span":
+          return (RichTextSpan(c.v.$1), c.v.$2);
+        case "img":
+          imageSources.add(Uri.parse(n.attributes["src"]!));
+          return (RichTextImage(imageSources.length-1), false);
+        case "table":
+          var cells = <RichTextTableCell>[];
+          var rows = n.getElementsByTagName("tr");
+          for (var (y, r) in rows.indexed) {
+            for (var (x, c) in r.children.indexed) {
+              int rs = 1, cs = 1;
+              var rss = c.attributes["rowspan"];
+              var css = c.attributes["colspan"];
+              if (rss != null) {
+                rs = int.tryParse(rss) ?? 1;
+              }
+              if (css != null) {
+                cs = int.tryParse(css) ?? 1;
+              }
+              cells.add(RichTextTableCell(row: y, col: x, rowSpan: rs, colSpan: cs, child: toRTE(c, false).$1));
+            }
+          }
+          return (RichTextTable(cells), false);
+        case "p":
+        case "div":
+          try {
+            if (n.classes.contains("wi_news")) {
+              String title = n.children[0].nodes.last.text ?? "";
+              var body = n.children[1];
+              var c = nodesToRTE(body.nodes, paragraphBreaks);
+              return (RichTextAnnouncement(title, c.$1), c.$2);
+            }
+            if (n.classes.contains("wi_authornotes")) {
+              var body = n.getElementsByClassName("wi_authornotes_body")[0];
+              var c = nodesToRTE(body.nodes, paragraphBreaks);
+              return (RichTextAuthorNote(c.$1), c.$2);
+            }
+          } catch (e) {
+            return (RichTextText(""), false);
+          }
+          return (RichTextParagraph(c.v.$1), c.v.$2);
+        default:
+          return (RichTextText(n.text), n.text.trim().isNotEmpty);
+      }
+    }
+    var text = n.text ?? "";
+    if (! paragraphBreaks) {
+      text = text.trim();
+    }
+    return (RichTextText(text.replaceAll("\n", "")), text.trim().isNotEmpty);
+  }
+  
+  /// Replaces the image numbers with the corresponding place in the replacement list.
+  /// Used to convert to global IDs for the db.
+  void rewriteImageIndices(List<int> replace) {
+    replacer(RichTextElement e) {
+      if (e is RichTextImage) {
+        e.image = replace[e.image];
+      }
+    }
+    for (var f in footnotes) {
+      f.visit(replacer);
+    }
+    for (var c in document) {
+      c.visit(replacer);
+    }
+  }
+  
+  Map<String, dynamic> toJson() {
+    return _$RichTextDocumentToJson(this);
+  }
+  
+  factory RichTextDocument.fromJson(Map<String, dynamic> json) => _$RichTextDocumentFromJson(json);
 }
 
 
@@ -245,6 +483,8 @@ final class _RichTextElementConverter extends JsonConverter<RichTextElement, Map
         return _$RichTextDividerFromJson(json);
       case RichTextFootnoteReference.tag:
         return _$RichTextFootnoteReferenceFromJson(json);
+      case RichTextText.tag:
+        return _$RichTextTextFromJson(json);
       default:
         throw ArgumentError("Invalid RichText tag: ${json["\$"] as String}");
     }
@@ -260,14 +500,37 @@ final class _RichTextElementConverter extends JsonConverter<RichTextElement, Map
 
 @JRTE
 final class RichTextTableCell {
+  @JsonKey(name: "r")
   int row;
+  @JsonKey(name: "c")
   int col;
+  @JsonKey(name: "rs")
   int rowSpan;
+  @JsonKey(name: "cs")
   int colSpan;
+  @JsonKey(name: "ch")
   RichTextElement child;
 
   RichTextTableCell({required this.row, required this.col, required this.rowSpan, required this.colSpan, required this.child});
   
+  Map<String, dynamic> toJson() => _$RichTextTableCellToJson(this);
+  
   static RichTextTableCell fromJson(Map<String, dynamic> json) => _$RichTextTableCellFromJson(json);
 }
 
+final class Lazy<T> {
+  late final T _v;
+  final T Function() _init;
+  bool _done = false;
+  
+  Lazy(this._init);
+  
+  get v {
+    if (! _done) {
+      _v = _init();
+      _done = true;
+    }
+    return _v;
+  }
+  
+}

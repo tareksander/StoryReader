@@ -8,6 +8,7 @@ import 'package:html/dom.dart';
 import 'package:http/http.dart' as http;
 import 'package:story_reader/db.dart';
 import 'package:story_reader/prefs.dart';
+import 'package:story_reader/rich_text_tree.dart';
 import 'package:story_reader/series_data.dart';
 import 'package:async/async.dart';
 
@@ -65,7 +66,7 @@ abstract class SHAPI extends ChopperService {
     var body = parse(resp.bodyString);
     return resp.copyWith(
         body: ChapterData(
-            id, body.getElementsByClassName("chapter-title").first.text, body.getElementById("chp_raw")!.innerHtml));
+            id, body.getElementsByClassName("chapter-title").first.text, RichTextDocument.html(body.getElementById("chp_raw")!.nodes)));
   }
 
   @Get(path: "series/{id}/{slugged}/")
@@ -161,7 +162,6 @@ final class RetryInterceptor implements Interceptor {
           }
           //print(res.statusCode);
           //print(res.headers);
-          //File("cf-error.html").writeAsString(res.errorWhereType()!);
           //print(res.error);
         }
       }

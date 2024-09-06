@@ -7,6 +7,7 @@ import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart';
 import 'package:story_reader/db.dart';
 import 'package:story_reader/prefs.dart';
+import 'package:story_reader/rich_text_tree.dart';
 import 'package:story_reader/series_data.dart';
 import 'package:story_reader/sh.dart';
 
@@ -145,7 +146,7 @@ abstract class RRAPI extends ChopperService {
       }
     }
     
-    return resp.copyWith(body: ChapterData(id, name, content.innerHtml));
+    return resp.copyWith(body: ChapterData(id, name, RichTextDocument.html(content.nodes)));
   }
   
   

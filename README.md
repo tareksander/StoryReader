@@ -33,8 +33,8 @@ A reader and offline library for ScribbleHub series.
   - [x] Customizable font size
   - [x] Maximum text width
   - [x] Turn off images to save bandwidth
-  - [ ] Customizable color scheme
-    - [ ] Light mode
+  - [x] Customizable color scheme
+    - [x] Light mode
 - [x] Library transfer over local network
 - [ ] Search
     - [x] Basic name search
@@ -45,7 +45,7 @@ A reader and offline library for ScribbleHub series.
     - [ ] Footnotes
     - [x] Dividers
     - [x] Images
-    - [ ] Tables
+    - [x] Tables
     - [ ] Other styling options
     - [ ] Polls
 - [ ] Library import via site account
@@ -62,10 +62,14 @@ A reader and offline library for ScribbleHub series.
     - [x] ...on FlatHub
   - [x] Zip archive for windows
   - [x] APK
-- [ ] Color scheme
-- [ ] Tables
+- [x] Color scheme
+- [x] Tables
 - [ ] Footnotes
 - [x] License page
+- [ ] Merge library from network (keep all data, only add)
+- [x] migrate contents to RichTextElement
+  - [x] consume RichTextDocument in read_page, generate in APIs
+  - [x] DB migration
 
 #### 1.1
 
@@ -85,10 +89,11 @@ A reader and offline library for ScribbleHub series.
 
 #### 1.2
 
-- [ ] WebNovel
-- [ ] More?
+- [ ] WebNovel?
 - [ ] Advanced search
-- [ ] Library import
+- [ ] Export series as epub
+  - [ ] and library as zip of epubs
+- [ ] Library filter by name, tag name or genre name
 
 #### 1.3
 

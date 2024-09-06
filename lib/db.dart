@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:html/parser.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'dart:io';
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 import 'package:sqlite3/sqlite3.dart';
+import 'package:story_reader/rich_text_tree.dart';
 import 'package:story_reader/series_data.dart';
 
 part 'db.g.dart';
@@ -107,9 +109,9 @@ const _utf8 = Utf8Codec();
 class AppDB extends _$AppDB {
   AppDB([QueryExecutor? executor]) : super(executor ?? _open());
   
-  String? chapterContents(Chapter c) {
+  RichTextDocument? chapterContents(Chapter c) {
     if (c.content != null) {
-      return _utf8.decoder.convert(_gzip.decoder.convert(c.content!));
+      return RichTextDocument.fromJson(jsonDecode(_utf8.decoder.convert(_gzip.decoder.convert(c.content!))));
     }
     return null;
   }
@@ -128,7 +130,7 @@ class AppDB extends _$AppDB {
       if (i != null) {
         return i.id;
       }
-      await update(chapterImages).write(ChapterImagesCompanion.insert(url: url));
+      await into(chapterImages).insert(ChapterImagesCompanion.insert(url: url));
       return (await (select(chapterImages)..where((i) => i.url.equals(url))).getSingle()).id;
     });
   }
@@ -303,9 +305,9 @@ class AppDB extends _$AppDB {
     );
   }
 
-  Future<void> saveChapter(Site site, String id, int number, String chapterID, String contents, String name) {
+  Future<void> saveChapter(Site site, String id, int number, String chapterID, RichTextDocument contents, String name) {
     var c =
-        Chapter(site: site, id: id, number: number, queued: false, content: Uint8List.fromList(_gzip.encoder.convert(_utf8.encoder.convert(contents))), chapterID: chapterID, name: name);
+        Chapter(site: site, id: id, number: number, queued: false, content: Uint8List.fromList(_gzip.encoder.convert(_utf8.encoder.convert(jsonEncode(contents.toJson())))), chapterID: chapterID, name: name);
     return transaction(() async {
       var res = await (select(chapters)..whereSamePrimaryKey(c)).get();
       if (res.isNotEmpty && res[0].queued) {
@@ -419,7 +421,7 @@ class AppDB extends _$AppDB {
   }
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration {
@@ -451,6 +453,21 @@ class AppDB extends _$AppDB {
       }
       if (from < 5) {
         await m.createTable(chapterImages);
+      }
+      if (from < 6) {
+        var cs = await Future.wait((await select(chapters).get()).map((c) async {
+          if (c.content != null) {
+            var content = _utf8.decode(_gzip.decode(c.content!));
+            var rtd = RichTextDocument.html(parseFragment(content).nodes);
+            var imageIDS = await Future.wait(rtd.imageSources.map((url) => addImage(url.toString())).toList());
+            rtd.rewriteImageIndices(imageIDS);
+            return c.copyWith(content: Value(Uint8List.fromList(_gzip.encode(_utf8.encode(jsonEncode(rtd.toJson()))))));
+          }
+          return c;
+        }).toList());
+        await batch((b) {
+          b.replaceAll(chapters, cs);
+        });
       }
     });
   }

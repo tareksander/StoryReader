@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:story_reader/db.dart';
+import 'package:story_reader/rich_text_tree.dart';
 
 enum CW {
   sexual,
@@ -64,7 +65,7 @@ final class SeriesData {
 final class ChapterData {
   String id;
   String name;
-  String? content;
+  RichTextDocument? content;
 
   ChapterData(this.id, this.name, [this.content]);
 
