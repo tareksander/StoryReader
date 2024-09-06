@@ -199,12 +199,6 @@ SliverList chapterContentToSlivers(String content, BuildContext context) {
   var frag = parseFragment(content);
   List<Widget> ws = [];
   for (var e in frag.children) {
-    if (e.localName == "p" || e.localName == "div") {
-      ws.add(Padding(
-        padding: EdgeInsets.symmetric(vertical: style.fontSize! / 2),
-        child: _inlineElementToWidget(e, context, style),
-      ));
-    }
     if (e.localName == "pre") {
       var s = style.copyWith(fontFamily: "RobotoMono");
       ws.add(Padding(
@@ -250,6 +244,7 @@ SliverList chapterContentToSlivers(String content, BuildContext context) {
           ),
         )),
       ));
+      continue;
     }
     if (e.classes.contains("wi_authornotes")) {
       var body = e.getElementsByClassName("wi_authornotes_body")[0];
@@ -269,9 +264,16 @@ SliverList chapterContentToSlivers(String content, BuildContext context) {
           ),
         )),
       ));
+      continue;
     }
     if (e.localName == "hr") {
       ws.add(Divider());
+    }
+    if (e.localName == "p" || e.localName == "div") {
+      ws.add(Padding(
+        padding: EdgeInsets.symmetric(vertical: style.fontSize! / 2),
+        child: _inlineElementToWidget(e, context, style),
+      ));
     }
   }
   return SliverList.list(
