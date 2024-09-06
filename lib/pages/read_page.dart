@@ -195,7 +195,7 @@ void _inlineElementToSpan(dom.Element e, BuildContext context, TextStyle style, 
 
 SliverList chapterContentToSlivers(String content, BuildContext context) {
   //print(content);
-  TextStyle style = const TextStyle().copyWith(fontSize: Preferences.readingFontSize.value.toDouble());
+  TextStyle style = TextStyle(color: Theme.of(context).colorScheme.onSurface).copyWith(fontSize: Preferences.readingFontSize.value.toDouble());
   var frag = parseFragment(content);
   List<Widget> ws = [];
   for (var e in frag.children) {
