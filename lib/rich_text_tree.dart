@@ -219,12 +219,15 @@ final class RichTextImage extends RichTextElement {
   @JsonKey(name: "i")
   int image;
   
+  @JsonKey(name: "u")
+  String url;
+  
   @override
   Map<String, dynamic> toJson() {
     return _$RichTextImageToJson(this)..["\$"] = tag;
   }
 
-  RichTextImage(this.image);
+  RichTextImage(this.image, this.url);
 
   @override
   void visit(void Function(RichTextElement p1) f) {
@@ -376,8 +379,9 @@ final class RichTextDocument {
         case "span":
           return (RichTextSpan(c.v.$1), c.v.$2);
         case "img":
-          imageSources.add(Uri.parse(n.attributes["src"]!));
-          return (RichTextImage(imageSources.length-1), false);
+          var src = Uri.parse(n.attributes["src"]!);
+          imageSources.add(src);
+          return (RichTextImage(imageSources.length-1, src.toString()), false);
         case "table":
           var cells = <RichTextTableCell>[];
           var rows = n.getElementsByTagName("tr");
@@ -433,11 +437,15 @@ final class RichTextDocument {
         e.image = replace[e.image];
       }
     }
+    visit(replacer);
+  }
+  
+  void visit(void Function(RichTextElement) fn) {
     for (var f in footnotes) {
-      f.visit(replacer);
+      f.visit(fn);
     }
     for (var c in document) {
-      c.visit(replacer);
+      c.visit(fn);
     }
   }
   

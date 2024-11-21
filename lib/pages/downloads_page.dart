@@ -16,9 +16,11 @@ class DownloadsPage extends StatefulWidget {
 class _DownloadsPageState extends State<DownloadsPage> {
   late StreamSubscription seriesS;
   late StreamSubscription queuedS;
+  late StreamSubscription imagesS;
 
   List<Series>? series;
   List<Chapter>? queued;
+  List<ChapterImage>? images;
 
   @override
   void initState() {
@@ -29,6 +31,9 @@ class _DownloadsPageState extends State<DownloadsPage> {
     queuedS = appDB.queuedChaptersStream().listen((ql) => setState(() {
           queued = ql;
         }));
+    imagesS = appDB.queuedImagesStream().listen((qi) => setState(() {
+      images = qi;
+    }));
   }
 
   @override
@@ -36,11 +41,12 @@ class _DownloadsPageState extends State<DownloadsPage> {
     super.dispose();
     seriesS.cancel();
     queuedS.cancel();
+    imagesS.cancel();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (series == null || queued == null) {
+    if (series == null || queued == null || images == null) {
       return const Center(child: CircularProgressIndicator());
     }
     return Padding(
@@ -72,6 +78,18 @@ class _DownloadsPageState extends State<DownloadsPage> {
           ],
         ),
         SliverList.separated(itemBuilder: (c, i) {
+          if (i < images!.length) {
+            var im = images![i];
+            return Row(children: [
+              Flexible(flex: 1, fit: FlexFit.tight, child: Text("Image: ${im.url}", softWrap: true)),
+              Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: ElevatedButton(onPressed: () => appDB.dequeueImage(im.id), child: Text("Dequeue")),
+              )
+            ]);
+          } else {
+            i -= images!.length;
+          }
           var c = queued![i];
           var s = series!.firstWhere((s) => s.id == c.id && s.site == c.site);
           return Row(children: [
@@ -81,7 +99,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
               child: ElevatedButton(onPressed: () => appDB.dequeueChapter(c.site, c.id, c.number), child: Text("Dequeue")),
             )
           ],);
-        }, separatorBuilder: (c, i) => const Divider(), itemCount: queued!.length)
+        }, separatorBuilder: (c, i) => const Divider(), itemCount: images!.length + queued!.length)
       ]),
     );
   }

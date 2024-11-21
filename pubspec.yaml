@@ -32,7 +32,7 @@ dependencies:
   # API requests
   chopper: ^8.0.0
   http: ^1.0.0
-  json_annotation: ^4.8.1
+  json_annotation: ^4.9.0
 
   #image_picker: ^1.1.2
   url_launcher: ^6.1.11

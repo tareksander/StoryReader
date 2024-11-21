@@ -67,9 +67,12 @@ A reader and offline library for ScribbleHub series.
 - [ ] Footnotes
 - [x] License page
 - [ ] Merge library from network (keep all data, only add)
-- [x] migrate contents to RichTextElement
+- [ ] remove flatpak audio permission
+- [ ] migrate contents to RichTextElement
   - [x] consume RichTextDocument in read_page, generate in APIs
   - [x] DB migration
+  - [ ] Add all styling and content options (e.g. polls, footnotes), since that information is lost on DB migration from HTML to RichText
+  - [ ] Option to clean orphaned chapter images
 
 #### 1.1
 
@@ -81,9 +84,6 @@ A reader and offline library for ScribbleHub series.
     - orient by other flutter apps
   - [ ] test build
   - [ ] submit PR
-- [ ] Android background downloads
-  - [ ] Foreground service plugin
-  - [ ] start/stop the service with the download manager isolate
 - [x] RoyalRoad
 
 

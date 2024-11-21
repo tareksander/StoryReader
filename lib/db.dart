@@ -116,6 +116,22 @@ class AppDB extends _$AppDB {
     return null;
   }
   
+  Future<void> dequeueImage(int id) {
+    return (delete(chapterImages)..where((i) => i.id.equals(id))).go();
+  }
+  
+  Stream<List<ChapterImage>> queuedImagesStream() {
+    return (select(chapterImages)..where((i) => i.image.isNull())).watch();
+  }
+  
+  Future<List<ChapterImage>> queuedImages() {
+    return (select(chapterImages)..where((i) => i.image.isNull())).get();
+  }
+  
+  Future<Uint8List?> chapterImage(int id) {
+    return (select(chapterImages)..where((i) => i.id.equals(id))).getSingleOrNull().then((v) => v?.image);
+  }
+  
   Future<List<Series>> series() async {
     return select(seriesTable).get();
   }
@@ -309,6 +325,8 @@ class AppDB extends _$AppDB {
     var c =
         Chapter(site: site, id: id, number: number, queued: false, content: Uint8List.fromList(_gzip.encoder.convert(_utf8.encoder.convert(jsonEncode(contents.toJson())))), chapterID: chapterID, name: name);
     return transaction(() async {
+      var imageIDS = await Future.wait(contents.imageSources.map((url) => addImage(url.toString())).toList());
+      contents.rewriteImageIndices(imageIDS);
       var res = await (select(chapters)..whereSamePrimaryKey(c)).get();
       if (res.isNotEmpty && res[0].queued) {
         await into(chapters).insertOnConflictUpdate(c);

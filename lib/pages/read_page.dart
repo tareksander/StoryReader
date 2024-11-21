@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/rendering/sliver.dart';
 import 'package:flutter/src/rendering/sliver_grid.dart';
@@ -11,6 +12,8 @@ import 'package:story_reader/prefs.dart';
 import 'package:story_reader/rich_text_tree.dart';
 import 'package:story_reader/series_data.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
+import 'dart:ui' as ui;
 
 import '../flexible_table.dart';
 
@@ -66,57 +69,68 @@ class _ReadPageState extends State<ReadPage> {
     return Scaffold(
       key: Key(widget.chapter.number.toString()),
       body: SafeArea(
-        child: CustomScrollView(
-          restorationId: "ReadScroll",
-          controller: sc,
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              title: Row(
-                children: [
-                  ElevatedButton(
-                      onPressed: () {
-                        inProgress ??= (() async {
-                          var chapters = await appDB
-                              .chaptersForFuture(SeriesData(site: widget.chapter.site, id: widget.chapter.id));
-                          int i = chapters.indexWhere((e) => e.number == widget.chapter.number);
-                          if (i > 0) {
-                            router.replace("/read", extra: chapters[i - 1].toJson());
-                          }
-                          inProgress = null;
-                        })();
-                      },
-                      child: Text("Previous")),
-                  Flexible(
-                    fit: FlexFit.tight,
-                    child: Center(
-                        child: Text("${widget.chapter.number + 1} - ${widget.chapter.name}",
-                            softWrap: true, style: const TextStyle(fontSize: 26))),
+        child: FutureBuilder(
+          future: richTextDocumentToSlivers(appDB.chapterContents(widget.chapter)!, context),
+          builder: (context, d) {
+            if (d.hasError) {
+              router.pop();
+            }
+            if (! d.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return CustomScrollView(
+              restorationId: "ReadScroll",
+              controller: sc,
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  title: Row(
+                    children: [
+                      ElevatedButton(
+                          onPressed: () {
+                            inProgress ??= (() async {
+                              var chapters = await appDB
+                                  .chaptersForFuture(SeriesData(site: widget.chapter.site, id: widget.chapter.id));
+                              int i = chapters.indexWhere((e) => e.number == widget.chapter.number);
+                              if (i > 0) {
+                                router.replace("/read", extra: chapters[i - 1].toJson());
+                              }
+                              inProgress = null;
+                            })();
+                          },
+                          child: Text("Previous")),
+                      Flexible(
+                        fit: FlexFit.tight,
+                        child: Center(
+                            child: Text("${widget.chapter.number + 1} - ${widget.chapter.name}",
+                                softWrap: true, style: const TextStyle(fontSize: 26))),
+                      ),
+                      ElevatedButton(onPressed: () => _goNext(), child: Text("Next")),
+                    ],
                   ),
+                ),
+                d.data!,
+                SliverList.list(children: [
                   ElevatedButton(onPressed: () => _goNext(), child: Text("Next")),
-                ],
-              ),
-            ),
-            richTextDocumentToSlivers(appDB.chapterContents(widget.chapter)!, context),
-            SliverList.list(children: [
-              ElevatedButton(onPressed: () => _goNext(), child: Text("Next")),
-            ]),
-          ],
+                ]),
+              ],
+            );
+          }
         ),
       ),
     );
   }
 }
 
-SliverList richTextDocumentToSlivers(RichTextDocument d, BuildContext context) {
+Future<SliverList> richTextDocumentToSlivers(RichTextDocument d, BuildContext context) async {
   TextStyle style = TextStyle(color: Theme.of(context).colorScheme.onSurface)
       .copyWith(fontSize: Preferences.readingFontSize.value.toDouble());
   var children = <Widget>[];
   for (var c in d.document) {
-    children.add(Text.rich(richTextElementToSpan(c, context, style)));
+    children.add(Text.rich(await richTextElementToSpan(c, context, style)));
   }
   for (var c in d.footnotes) {
-    children.add(Text.rich(richTextElementToSpan(c, context, style)));
+    children.add(Text.rich(await richTextElementToSpan(c, context, style)));
   }
   double width = Preferences.maxTextWidth.value.toDouble();
   return SliverList.list(
@@ -129,25 +143,25 @@ SliverList richTextDocumentToSlivers(RichTextDocument d, BuildContext context) {
           .toList());
 }
 
-InlineSpan richTextElementToSpan(RichTextElement e, BuildContext context, TextStyle style,
-    [bool paragraphBreaks = true]) {
+Future<InlineSpan> richTextElementToSpan(RichTextElement e, BuildContext context, TextStyle style,
+    [bool paragraphBreaks = true]) async {
   switch (e) {
     case RichTextText():
       return TextSpan(text: e.content, style: style);
     case RichTextSpan():
       return TextSpan(
-          children: e.children.map((c) => richTextElementToSpan(c, context, style, paragraphBreaks)).toList());
+          children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, style, paragraphBreaks)).toList()));
     case RichTextParagraph():
       if (paragraphBreaks) {
         return WidgetSpan(
             child: Padding(
           padding: EdgeInsets.symmetric(vertical: style.fontSize! / 2.0),
           child: Text.rich(TextSpan(
-              children: e.children.map((c) => richTextElementToSpan(c, context, style, paragraphBreaks)).toList())),
+              children: await Future.wait(e.children.map((c) async => await richTextElementToSpan(c, context, style, paragraphBreaks)).toList()))),
         ));
       }
       return TextSpan(
-          children: e.children.map((c) => richTextElementToSpan(c, context, style, paragraphBreaks)).toList());
+          children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, style, paragraphBreaks)).toList()));
     case RichTextBreak():
       if (paragraphBreaks) {
         return TextSpan(text: "\n", style: style);
@@ -159,31 +173,65 @@ InlineSpan richTextElementToSpan(RichTextElement e, BuildContext context, TextSt
               child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Text.rich(
-            TextSpan(children: e.children.map((c) => richTextElementToSpan(c, context, s, paragraphBreaks)).toList())),
-      )));
+          TextSpan(
+              children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, s, paragraphBreaks)).toList())
+          )
+      ))));
     case RichTextCursive():
       var s = style.copyWith(fontStyle: FontStyle.italic);
-      return TextSpan(children: e.children.map((c) => richTextElementToSpan(c, context, s, paragraphBreaks)).toList());
+      return TextSpan(children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, s, paragraphBreaks)).toList()));
     case RichTextBold():
       var s = style.copyWith(fontWeight: FontWeight.bold);
-      return TextSpan(children: e.children.map((c) => richTextElementToSpan(c, context, s, paragraphBreaks)).toList());
+      return TextSpan(children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, s, paragraphBreaks)).toList()));
     case RichTextTable():
       return WidgetSpan(
           child: FlexibleTable(
-              children: e.cells
-                  .map((c) => FlexibleTableCell(
+              children: await Future.wait(e.cells
+                  .map((c) async => FlexibleTableCell(
                         row: c.row,
                         col: c.col,
                         rowSpan: c.rowSpan,
                         colSpan: c.colSpan,
-                        child: Text.rich(richTextElementToSpan(c.child, context, style, false)),
+                        child: Text.rich(await richTextElementToSpan(c.child, context, style, false)),
                       ))
-                  .toList()));
+                  .toList())));
     case RichTextLink():
+      var s = style.copyWith(color: Colors.blue);
       return TextSpan(
-          children: e.children.map((c) => richTextElementToSpan(c, context, style, paragraphBreaks)).toList());
+          mouseCursor: SystemMouseCursors.click,
+          recognizer: SerialTapGestureRecognizer()..onSerialTapUp = (d) => launchUrlString(e.url, mode: LaunchMode.externalApplication),
+          children: await Future.wait(e.children.map((c) async => await richTextElementToSpan(c, context, s, paragraphBreaks)).toList()));
     case RichTextImage():
-      return WidgetSpan(child: Placeholder());
+      var i = await appDB.chapterImage(e.image);
+      if (i != null) {
+        ui.ImmutableBuffer imb = await ui.ImmutableBuffer.fromUint8List(i);
+        try {
+          ui.ImageDescriptor im = await ui.ImageDescriptor.encoded(imb);
+          double width = im.width.toDouble(), height = im.height.toDouble();
+          im.dispose();
+          return WidgetSpan(child: LayoutBuilder(
+            builder: (context, constraints) {
+              double maxWidth;
+              if (constraints.hasBoundedWidth) {
+                maxWidth = constraints.maxWidth;
+              } else {
+                maxWidth = Preferences.maxTextWidth.value.toDouble() - 16;
+              }
+              double scale = 1;
+              if (width > maxWidth) {
+                scale = maxWidth / width;
+              }
+              return Image.memory(i, fit: BoxFit.scaleDown, width: width * scale, height: height * scale);
+            }
+          ));
+        } catch (e) {
+          return const WidgetSpan(child: Placeholder(fallbackWidth: 30.0, fallbackHeight: 40.0));
+        } finally {
+          imb.dispose();
+        }
+      } else {
+        return const WidgetSpan(child: Placeholder(fallbackWidth: 40.0, fallbackHeight: 40.0));
+      }
     case RichTextAnnouncement():
       return WidgetSpan(
           child: Padding(
@@ -198,7 +246,7 @@ InlineSpan richTextElementToSpan(RichTextElement e, BuildContext context, TextSt
                 child: Text(e.title, style: style.copyWith(fontSize: style.fontSize! + 2.0)),
               ),
               Text.rich(TextSpan(
-                  children: e.children.map((c) => richTextElementToSpan(c, context, style, paragraphBreaks)).toList())),
+              children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, style, paragraphBreaks)).toList())))
             ],
           ),
         )),
@@ -217,7 +265,7 @@ InlineSpan richTextElementToSpan(RichTextElement e, BuildContext context, TextSt
                 child: Text("Author Note", style: style.copyWith(fontSize: style.fontSize! + 2.0)),
               ),
               Text.rich(TextSpan(
-                  children: e.children.map((c) => richTextElementToSpan(c, context, style, paragraphBreaks)).toList())),
+              children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, style, paragraphBreaks)).toList())))
             ],
           ),
         )),
