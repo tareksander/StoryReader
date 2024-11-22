@@ -29,7 +29,7 @@ A reader and offline library for ScribbleHub series.
   - [ ] More?
 - [x] Offline library
 - [x] Thumbnails
-- [ ] Settings
+- [x] Settings
   - [x] Customizable font size
   - [x] Maximum text width
   - [x] Turn off images to save bandwidth
@@ -49,7 +49,6 @@ A reader and offline library for ScribbleHub series.
     - [ ] Other styling options
     - [ ] Polls
 - [ ] Library import via site account
-- [ ] Service for background downloads on Android
 
 ## Roadmap
 
