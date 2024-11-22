@@ -66,7 +66,7 @@ A reader and offline library for ScribbleHub series.
 - [ ] Footnotes
 - [x] License page
 - [ ] Merge library from network (keep all data, only add)
-- [ ] remove flatpak audio permission
+- [x] remove flatpak audio permission
 - [ ] migrate contents to RichTextElement
   - [x] consume RichTextDocument in read_page, generate in APIs
   - [x] DB migration
