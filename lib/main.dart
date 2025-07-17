@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_gen/gen_l10n/localizations.dart';
+import 'l10n/localizations.dart';
 import 'package:story_reader/db.dart';
 import 'package:story_reader/download_manager.dart';
 import 'package:story_reader/pages/load_network_page.dart';

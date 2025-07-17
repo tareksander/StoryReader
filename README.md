@@ -72,13 +72,15 @@ A reader and offline library for ScribbleHub series.
   - [x] DB migration
   - [ ] Add all styling and content options (e.g. polls, footnotes), since that information is lost on DB migration from HTML to RichText
   - [ ] Option to clean orphaned chapter images
+  - [ ] Option for an image size limit (e.g. no more than 1mb per image)
+    - can still be downloaded on request via the URL
 
 #### 1.1
 
 - [ ] Update notifications for windows
   - [ ] check GitHub releases
 - [ ] f-droid
-  - [ ] change id to io.github
+  - [x] change id to io.github
   - [ ] create build metadata
     - orient by other flutter apps
   - [ ] test build
@@ -92,6 +94,7 @@ A reader and offline library for ScribbleHub series.
 - [ ] Advanced search
 - [ ] Export series as epub
   - [ ] and library as zip of epubs
+  - [ ] convert RichText back to HTML and CSS
 - [ ] Library filter by name, tag name or genre name
 
 #### 1.3
