@@ -113,6 +113,7 @@ class AppDB extends _$AppDB {
   RichTextDocument? chapterContents(Chapter c) {
     if (c.content != null) {
       var data = _utf8.decoder.convert(_gzip.decoder.convert(c.content!));
+      File("chapter-dump.json").writeAsString(data);
       return RichTextDocument.fromJson(jsonDecode(data));
     }
     return null;
@@ -347,11 +348,14 @@ class AppDB extends _$AppDB {
   }
 
   Future<void> saveChapter(Site site, String id, int number, String chapterID, RichTextDocument contents, String name) {
-    var c =
-        Chapter(site: site, id: id, number: number, queued: false, content: Uint8List.fromList(_gzip.encoder.convert(_utf8.encoder.convert(jsonEncode(contents.toJson())))), chapterID: chapterID, name: name);
     return transaction(() async {
       var imageIDS = await Future.wait(contents.imageSources.map((url) => addImage(url.toString())).toList());
+      print(imageIDS);
       contents.rewriteImageIndices(imageIDS);
+      var c =
+        Chapter(site: site, id: id, number: number, queued: false,
+            content: Uint8List.fromList(_gzip.encoder.convert(_utf8.encoder.convert(jsonEncode(contents.toJson())))),
+            chapterID: chapterID, name: name);
       var res = await (select(chapters)..whereSamePrimaryKey(c)).get();
       if (res.isNotEmpty && res[0].queued) {
         await into(chapters).insertOnConflictUpdate(c);

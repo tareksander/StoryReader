@@ -51,7 +51,7 @@ final class RichTextSpan extends RichTextElement {
   void visit(void Function(RichTextElement p1) f) {
     f(this);
     for (var c in children) {
-      f(c);
+      c.visit(f);
     }
   }
 }
@@ -74,7 +74,7 @@ final class RichTextParagraph extends RichTextElement {
   void visit(void Function(RichTextElement p1) f) {
     f(this);
     for (var c in children) {
-      f(c);
+      c.visit(f);
     }
   }
 }
@@ -114,7 +114,7 @@ final class RichTextCodeBlock extends RichTextElement {
   void visit(void Function(RichTextElement p1) f) {
     f(this);
     for (var c in children) {
-      f(c);
+      c.visit(f);
     }
   }
 }
@@ -138,7 +138,7 @@ final class RichTextCursive extends RichTextElement {
   void visit(void Function(RichTextElement p1) f) {
     f(this);
     for (var c in children) {
-      f(c);
+      c.visit(f);
     }
   }
 }
@@ -161,7 +161,7 @@ final class RichTextBold extends RichTextElement {
   void visit(void Function(RichTextElement p1) f) {
     f(this);
     for (var c in children) {
-      f(c);
+      c.visit(f);
     }
   }
 }
@@ -183,6 +183,9 @@ final class RichTextTable extends RichTextElement {
   @override
   void visit(void Function(RichTextElement p1) f) {
     f(this);
+    for (var c in cells) {
+      c.child.visit(f);
+    }
   }
 }
 
@@ -207,7 +210,7 @@ final class RichTextLink extends RichTextElement {
   void visit(void Function(RichTextElement p1) f) {
     f(this);
     for (var c in children) {
-      f(c);
+      c.visit(f);
     }
   }
 }
@@ -256,7 +259,7 @@ final class RichTextAnnouncement extends RichTextElement {
   void visit(void Function(RichTextElement p1) f) {
     f(this);
     for ( var c in children) {
-      f(c);
+      c.visit(f);
     }
   }
 }
@@ -279,7 +282,7 @@ final class RichTextAuthorNote extends RichTextElement {
   void visit(void Function(RichTextElement p1) f) {
     f(this);
     for (var c in children) {
-      f(c);
+      c.visit(f);
     }
   }
 }

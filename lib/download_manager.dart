@@ -5,11 +5,12 @@ import 'dart:isolate';
 
 import 'package:drift/isolate.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:http/http.dart';
+import 'package:story_reader/client.dart';
 import 'package:story_reader/db.dart';
 import 'package:story_reader/main.dart';
+import 'package:story_reader/rr.dart';
 import 'package:story_reader/series_data.dart';
-import 'package:http/http.dart' as http;
-
 
 void startDownloadManager() {
   if (_downloadManager == null) {
@@ -39,7 +40,7 @@ Isolate? _downloadManager;
 
 
 void _chapterDownloadManager() async {
-  var client = http.Client();
+  var client = httpClient();
   var connection = await appDB.serializableConnection();
   var exit = ReceivePort();
   exit.listen((_) {
@@ -55,7 +56,15 @@ void _chapterDownloadManager() async {
       var il = await db.queuedImages();
       try {
         for (var im in il) {
-          await db.setImageData(im.id, (await client.get(Uri.parse(im.url))).bodyBytes);
+          var req = Request("GET", Uri.parse(im.url));
+          req.headers.addAll({
+            "Sec-Fetch-Dest": "image",
+            "Sec-Fetch-Mode": "no-cors",
+            "Sec-Fetch-Site": "cross-site",
+            "Referer": baseURL,
+          });
+          req.followRedirects = false;
+          await db.setImageData(im.id, await (await client.send(req)).stream.toBytes());
         }
         for (var c in l) {
           var s = sl.firstWhere((s) => s.site == c.site && s.id == c.id);
@@ -70,6 +79,10 @@ void _chapterDownloadManager() async {
           await Future.delayed(Duration.zero);
         }
       } catch (e) {
+        if (e is Error) {
+          print(e.stackTrace);
+        }
+        print(e);
         await Future.delayed(const Duration(seconds: 5));
       }
       await Future.delayed(const Duration(seconds: 1));
