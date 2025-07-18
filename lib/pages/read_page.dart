@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -70,7 +71,7 @@ class _ReadPageState extends State<ReadPage> {
       key: Key(widget.chapter.number.toString()),
       body: SafeArea(
         child: FutureBuilder(
-          future: richTextDocumentToSlivers(appDB.chapterContents(widget.chapter)!, context),
+          future: richTextDocumentToSlivers(appDB.chapterContents(widget.chapter)!, context, widget.chapter),
           builder: (context, d) {
             if (d.hasError) {
               router.pop();
@@ -122,15 +123,15 @@ class _ReadPageState extends State<ReadPage> {
   }
 }
 
-Future<SliverList> richTextDocumentToSlivers(RichTextDocument d, BuildContext context) async {
+Future<SliverList> richTextDocumentToSlivers(RichTextDocument d, BuildContext context, Chapter chapter) async {
   TextStyle style = TextStyle(color: Theme.of(context).colorScheme.onSurface)
       .copyWith(fontSize: Preferences.readingFontSize.value.toDouble());
   var children = <Widget>[];
   for (var c in d.document) {
-    children.add(Text.rich(await richTextElementToSpan(c, context, style)));
+    children.add(Text.rich(await richTextElementToSpan(c, context, style, chapter)));
   }
   for (var c in d.footnotes) {
-    children.add(Text.rich(await richTextElementToSpan(c, context, style)));
+    children.add(Text.rich(await richTextElementToSpan(c, context, style, chapter)));
   }
   double width = Preferences.maxTextWidth.value.toDouble();
   return SliverList.list(
@@ -143,25 +144,30 @@ Future<SliverList> richTextDocumentToSlivers(RichTextDocument d, BuildContext co
           .toList());
 }
 
-Future<InlineSpan> richTextElementToSpan(RichTextElement e, BuildContext context, TextStyle style,
+Future<InlineSpan> richTextElementToSpan(RichTextElement e, BuildContext context, TextStyle style, Chapter chapter,
     [bool paragraphBreaks = true]) async {
+  var borderColor = Theme
+      .of(context)
+      .dividerColor;
   switch (e) {
     case RichTextText():
       return TextSpan(text: e.content, style: style);
     case RichTextSpan():
       return TextSpan(
-          children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, style, paragraphBreaks)).toList()));
+          children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, style, chapter, paragraphBreaks)).toList()));
     case RichTextParagraph():
       if (paragraphBreaks) {
         return WidgetSpan(
             child: Padding(
           padding: EdgeInsets.symmetric(vertical: style.fontSize! / 2.0),
           child: Text.rich(TextSpan(
-              children: await Future.wait(e.children.map((c) async => await richTextElementToSpan(c, context, style, paragraphBreaks)).toList()))),
+              children: await Future.wait(e.children.map((c) async => await richTextElementToSpan(c, context, style,
+                  chapter, paragraphBreaks)).toList()))),
         ));
       }
       return TextSpan(
-          children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, style, paragraphBreaks)).toList()));
+          children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, style,
+              chapter, paragraphBreaks)).toList()));
     case RichTextBreak():
       if (paragraphBreaks) {
         return TextSpan(text: "\n", style: style);
@@ -174,15 +180,18 @@ Future<InlineSpan> richTextElementToSpan(RichTextElement e, BuildContext context
         padding: const EdgeInsets.all(8.0),
         child: Text.rich(
           TextSpan(
-              children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, s, paragraphBreaks)).toList())
+              children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, s,
+                  chapter, paragraphBreaks)).toList())
           )
       ))));
     case RichTextCursive():
       var s = style.copyWith(fontStyle: FontStyle.italic);
-      return TextSpan(children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, s, paragraphBreaks)).toList()));
+      return TextSpan(children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, s,
+          chapter, paragraphBreaks)).toList()));
     case RichTextBold():
       var s = style.copyWith(fontWeight: FontWeight.bold);
-      return TextSpan(children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, s, paragraphBreaks)).toList()));
+      return TextSpan(children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, s,
+          chapter, paragraphBreaks)).toList()));
     case RichTextTable():
       return WidgetSpan(
           child: FlexibleTable(
@@ -192,7 +201,7 @@ Future<InlineSpan> richTextElementToSpan(RichTextElement e, BuildContext context
                         col: c.col,
                         rowSpan: c.rowSpan,
                         colSpan: c.colSpan,
-                        child: Text.rich(await richTextElementToSpan(c.child, context, style, false)),
+                        child: Text.rich(await richTextElementToSpan(c.child, context, style, chapter, false)),
                       ))
                   .toList())));
     case RichTextLink():
@@ -200,38 +209,83 @@ Future<InlineSpan> richTextElementToSpan(RichTextElement e, BuildContext context
       return TextSpan(
           mouseCursor: SystemMouseCursors.click,
           recognizer: SerialTapGestureRecognizer()..onSerialTapUp = (d) => launchUrlString(e.url, mode: LaunchMode.externalApplication),
-          children: await Future.wait(e.children.map((c) async => await richTextElementToSpan(c, context, s, paragraphBreaks)).toList()));
+          children: await Future.wait(e.children.map((c) async => await richTextElementToSpan(c, context, s, chapter, paragraphBreaks)).toList()));
     case RichTextImage():
+      var size = null;
       var i = await appDB.chapterImage(e.image);
       if (i != null) {
-        ui.ImmutableBuffer imb = await ui.ImmutableBuffer.fromUint8List(i);
-        try {
-          ui.ImageDescriptor im = await ui.ImageDescriptor.encoded(imb);
-          double width = im.width.toDouble(), height = im.height.toDouble();
-          im.dispose();
-          return WidgetSpan(child: LayoutBuilder(
-            builder: (context, constraints) {
-              double maxWidth;
-              if (constraints.hasBoundedWidth) {
-                maxWidth = constraints.maxWidth;
-              } else {
-                maxWidth = Preferences.maxTextWidth.value.toDouble() - 16;
-              }
-              double scale = 1;
-              if (width > maxWidth) {
-                scale = maxWidth / width;
-              }
-              return Image.memory(i, fit: BoxFit.scaleDown, width: width * scale, height: height * scale);
-            }
-          ));
-        } catch (e) {
-          return const WidgetSpan(child: Placeholder(fallbackWidth: 30.0, fallbackHeight: 40.0));
-        } finally {
-          imb.dispose();
-        }
-      } else {
-        return const WidgetSpan(child: Placeholder(fallbackWidth: 40.0, fallbackHeight: 40.0));
+        size = await _imageSize(i);
       }
+      return WidgetSpan(child: StreamBuilder(stream: appDB.chapterImageWatch(e.image).asyncMap((v) async {
+        if (v == null) {
+          return null;
+        }
+        return (v, await _imageSize(v));
+      }), builder: (c, v) {
+        if (v.connectionState == ConnectionState.waiting) {
+          if (size != null) {
+            return LayoutBuilder(
+                builder: (context, constraints) {
+                  double maxWidth;
+                  if (constraints.hasBoundedWidth) {
+                    maxWidth = constraints.maxWidth;
+                  } else {
+                    maxWidth = Preferences.maxTextWidth.value.toDouble() - 16;
+                  }
+                  double scale = 1;
+                  if (size.width > maxWidth) {
+                    scale = maxWidth / size.width;
+                  }
+                  return SizedBox(width: size.width * scale, height: size.height * scale);
+                }
+            );;
+          } else {
+            return Center(child: CircularProgressIndicator());
+          }
+        }
+        var download = Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Center(
+            child: Container(
+              decoration: ShapeDecoration(shape: Border.all(color: borderColor)),
+              child: Column(children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("Image not found"),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(onPressed: () async {
+                    await appDB.queueImage(e.image);
+                  }, child: Text("Download")),
+                ),
+              ],),
+            ),
+          ),
+        );
+        if (! v.hasData) {
+          return download;
+        }
+        var i = v.data;
+        if (i != null) {
+          return LayoutBuilder(
+                  builder: (context, constraints) {
+                    double maxWidth;
+                    if (constraints.hasBoundedWidth) {
+                      maxWidth = constraints.maxWidth;
+                    } else {
+                      maxWidth = Preferences.maxTextWidth.value.toDouble() - 16;
+                    }
+                    double scale = 1;
+                    if (i.$2.width > maxWidth) {
+                      scale = maxWidth / i.$2.width;
+                    }
+                    return Image.memory(i.$1, fit: BoxFit.scaleDown, width: i.$2.width * scale, height: i.$2.height * scale);
+                  }
+              );
+        }
+        return download;
+      }));
     case RichTextAnnouncement():
       return WidgetSpan(
           child: Padding(
@@ -246,7 +300,8 @@ Future<InlineSpan> richTextElementToSpan(RichTextElement e, BuildContext context
                 child: Text(e.title, style: style.copyWith(fontSize: style.fontSize! + 2.0)),
               ),
               Text.rich(TextSpan(
-              children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, style, paragraphBreaks)).toList())))
+              children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, style,
+                  chapter, paragraphBreaks)).toList())))
             ],
           ),
         )),
@@ -265,7 +320,8 @@ Future<InlineSpan> richTextElementToSpan(RichTextElement e, BuildContext context
                 child: Text("Author Note", style: style.copyWith(fontSize: style.fontSize! + 2.0)),
               ),
               Text.rich(TextSpan(
-              children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, style, paragraphBreaks)).toList())))
+              children: await Future.wait(e.children.map((c) async => await  richTextElementToSpan(c, context, style,
+                  chapter, paragraphBreaks)).toList())))
             ],
           ),
         )),
@@ -277,6 +333,20 @@ Future<InlineSpan> richTextElementToSpan(RichTextElement e, BuildContext context
       return TextSpan(text: e.footnote.toString(), style: s);
   }
   return TextSpan(text: "", style: style);
+}
+
+
+Future<Size> _imageSize(Uint8List i) async {
+  ui.ImmutableBuffer imb = await ui.ImmutableBuffer.fromUint8List(i);
+  try {
+    ui.ImageDescriptor im = await ui.ImageDescriptor.encoded(imb);
+    double width = im.width.toDouble(),
+        height = im.height.toDouble();
+    im.dispose();
+    return Size(width, height);
+  } finally {
+    imb.dispose();
+  }
 }
 
 void _inlineElementToSpan(dom.Element e, BuildContext context, TextStyle style, List<InlineSpan> spans,

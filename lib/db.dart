@@ -72,6 +72,7 @@ class ChapterImages extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get url => text().unique()();
   BlobColumn get image => blob().nullable()();
+  BoolColumn get shouldDownload => boolean()();
   
   @override
   String? get tableName => "images";
@@ -117,19 +118,42 @@ class AppDB extends _$AppDB {
   }
   
   Future<void> dequeueImage(int id) {
-    return (delete(chapterImages)..where((i) => i.id.equals(id))).go();
+    return customUpdate("UPDATE images SET should_download = false WHERE id = ?", updateKind: UpdateKind.update, updates: {chapterImages}, variables: [
+      Variable.withInt(id)
+    ]);
+  }
+
+  Future<void> queueImage(int id) {
+    return customUpdate("UPDATE images SET should_download = true WHERE id = ?", updateKind: UpdateKind.update,
+        updates: {chapterImages},
+        variables: [
+          Variable.withInt(id)
+        ]);
   }
   
   Stream<List<ChapterImage>> queuedImagesStream() {
-    return (select(chapterImages)..where((i) => i.image.isNull())).watch();
+    return (select(chapterImages)..where((i) => i.image.isNull() & i.shouldDownload)).watch();
   }
   
   Future<List<ChapterImage>> queuedImages() {
-    return (select(chapterImages)..where((i) => i.image.isNull())).get();
+    return (select(chapterImages)..where((i) => i.image.isNull() & i.shouldDownload)).get();
   }
   
   Future<Uint8List?> chapterImage(int id) {
     return (select(chapterImages)..where((i) => i.id.equals(id))).getSingleOrNull().then((v) => v?.image);
+  }
+
+  Stream<Uint8List?> chapterImageWatch(int id) {
+    return (select(chapterImages)
+      ..where((i) => i.id.equals(id))).watchSingleOrNull().map((v) => v?.image).distinct((c, n) {
+        if (c == n) {
+          return true;
+        }
+        if (c == null || n == null) {
+          return false;
+        }
+        return c.equals(n);
+    });
   }
   
   Future<List<Series>> series() async {
@@ -146,7 +170,7 @@ class AppDB extends _$AppDB {
       if (i != null) {
         return i.id;
       }
-      await into(chapterImages).insert(ChapterImagesCompanion.insert(url: url));
+      await into(chapterImages).insert(ChapterImagesCompanion.insert(url: url, shouldDownload: true));
       return (await (select(chapterImages)..where((i) => i.url.equals(url))).getSingle()).id;
     });
   }
@@ -174,7 +198,7 @@ class AppDB extends _$AppDB {
   Future<void> deleteImages() {
     return transaction(() async {
       await customUpdate("UPDATE series SET thumbnail = NULL", updates: {seriesTable}, updateKind: UpdateKind.update);
-      await delete(chapterImages).go();
+      await customUpdate("UPDATE images SET image = NULL, should_download = false", updateKind: UpdateKind.update, updates: {chapterImages});
     });
   }
   
@@ -387,15 +411,14 @@ class AppDB extends _$AppDB {
     });
   }
 
-  Future<void> dequeueAll() {
-    return customUpdate("UPDATE chapters SET queued = false", updateKind: UpdateKind.update, updates: {chapters});
+  Future<void> dequeueAll() async {
+    await await customUpdate("UPDATE images SET should_download = false", updateKind: UpdateKind.update,
+        updates: {chapterImages});
+    await customUpdate("UPDATE chapters SET queued = false", updateKind: UpdateKind.update, updates: {chapters});
   }
 
   SimpleSelectStatement<$SeriesTableTable, Series> _downloadedSeries() {
     return select(seriesTable)
-      ..where((s) => existsQuery(select(chapters)
-        ..where(
-            (c) => c.id.equalsExp(s.id) & c.site.equalsExp(s.site) & (c.content.isNotNull() | c.queued.equals(true)))))
       ..orderBy([(s) => OrderingTerm(expression: s.name)]);
   }
 
@@ -439,7 +462,7 @@ class AppDB extends _$AppDB {
   }
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration {
@@ -471,6 +494,9 @@ class AppDB extends _$AppDB {
       }
       if (from < 5) {
         await m.createTable(chapterImages);
+      }
+      if (from < 7) {
+        await m.addColumn(chapterImages, chapterImages.shouldDownload);
       }
       if (from < 6) {
         var cs = await Future.wait((await select(chapters).get()).map((c) async {
