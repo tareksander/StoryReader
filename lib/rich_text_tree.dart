@@ -346,7 +346,7 @@ final class RichTextDocument {
     return (c.map((e) => e.$1).toList(), c.map((e) => e.$2).any((e) => e));
   }
   
-  (RichTextElement, bool) toRTE(dom.Node n, [bool paragraphBreaks = true]) {
+  (RichTextElement, bool) toRTE(dom.Node n, [bool paragraphBreaks = true, bool trim = false]) {
     if (n is dom.Element) {
       Lazy<(List<RichTextElement>, bool)> c = Lazy(() => nodesToRTE(n.nodes, paragraphBreaks));
       switch (n.localName) {
@@ -396,12 +396,13 @@ final class RichTextDocument {
               if (css != null) {
                 cs = int.tryParse(css) ?? 1;
               }
-              cells.add(RichTextTableCell(row: y, col: x, rowSpan: rs, colSpan: cs, child: toRTE(c, false).$1));
+              cells.add(RichTextTableCell(row: y, col: x, rowSpan: rs, colSpan: cs, child: toRTE(c, true).$1));
             }
           }
           return (RichTextTable(cells), false);
         case "p":
         case "div":
+        case "td":
           try {
             if (n.classes.contains("wi_news")) {
               String title = n.children[0].nodes.last.text ?? "";
@@ -418,14 +419,12 @@ final class RichTextDocument {
             return (RichTextText(""), false);
           }
           return (RichTextParagraph(c.v.$1), c.v.$2);
-        default:
-          return (RichTextText(n.text), n.text.trim().isNotEmpty);
       }
     }
     var text = n.text ?? "";
-    if (! paragraphBreaks) {
+    //if (! paragraphBreaks) {
       text = text.trim();
-    }
+    //}
     return (RichTextText(text.replaceAll("\n", "")), text.trim().isNotEmpty);
   }
   

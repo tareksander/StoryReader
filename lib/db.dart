@@ -112,7 +112,8 @@ class AppDB extends _$AppDB {
   
   RichTextDocument? chapterContents(Chapter c) {
     if (c.content != null) {
-      return RichTextDocument.fromJson(jsonDecode(_utf8.decoder.convert(_gzip.decoder.convert(c.content!))));
+      var data = _utf8.decoder.convert(_gzip.decoder.convert(c.content!));
+      return RichTextDocument.fromJson(jsonDecode(data));
     }
     return null;
   }

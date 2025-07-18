@@ -6,12 +6,12 @@ import 'package:flutter/rendering.dart';
 
 class FlexibleTable extends MultiChildRenderObjectWidget {
   
-  
-  const FlexibleTable({super.key, required List<FlexibleTableCell> super.children});
+  final Color? border;
+  const FlexibleTable({super.key, required List<FlexibleTableCell> super.children, this.border});
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return _FlexibleTableRenderObject();
+    return _FlexibleTableRenderObject(border);
   }
 }
 
@@ -36,7 +36,10 @@ class _FlexibleTableRenderObject extends RenderBox
   List<List<_Skip>> skip = [];
   double colSize = 0;
   int cols = 0;
-  
+  Color? borderColor;
+
+  _FlexibleTableRenderObject(this.borderColor);
+
   @override
   void performLayout() {
     assert(constraints.hasBoundedWidth);
@@ -105,6 +108,23 @@ class _FlexibleTableRenderObject extends RenderBox
   @override
   void paint(PaintingContext context, Offset offset) {
     defaultPaint(context, offset);
+    if (borderColor != null) {
+      var p = Paint();
+      p.color = borderColor!;
+      var tableHeight = rowHeights.sum;
+      var tableWidth = colSize * cols;
+      for (int i = 0; i <= cols; i++) {
+        var start = offset + Offset(colSize * i, 0);
+        context.canvas.drawLine(start, start + Offset(0, tableHeight), p);
+      }
+      context.canvas.drawLine(offset, offset + Offset(tableWidth, 0), p);
+      double height = 0;
+      for (int r = 0; r < rows.length; r++) {
+        height += rowHeights[r];
+        var start = offset + Offset(0, height);
+        context.canvas.drawLine(start, start + Offset(tableWidth, 0), p);
+      }
+    }
   }
   
   @override

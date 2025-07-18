@@ -195,13 +195,17 @@ Future<InlineSpan> richTextElementToSpan(RichTextElement e, BuildContext context
     case RichTextTable():
       return WidgetSpan(
           child: FlexibleTable(
+            border: borderColor,
               children: await Future.wait(e.cells
                   .map((c) async => FlexibleTableCell(
                         row: c.row,
                         col: c.col,
                         rowSpan: c.rowSpan,
                         colSpan: c.colSpan,
-                        child: Text.rich(await richTextElementToSpan(c.child, context, style, chapter, false)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: Text.rich(await richTextElementToSpan(c.child, context, style, chapter, true)),
+                        ),
                       ))
                   .toList())));
     case RichTextLink():
