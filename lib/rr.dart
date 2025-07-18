@@ -117,7 +117,7 @@ abstract class RRAPI extends ChopperService {
       return resp.copyWith();
     }
     var body = parse(resp.bodyString);
-    var excludedStyle = body.getElementsByTagName("style")[0].text.trim().split(RegExp(r"\s*{"))[0];
+    var excludedStyle = body.getElementsByTagName("style").where((e) => e.text.contains(RegExp(r"display\s*:\s*none"))).first.text.trim().split(RegExp(r"\s*{"))[0];
     var content = body.querySelector(".chapter-content")!;
     content.querySelector(excludedStyle)?.remove();
     
